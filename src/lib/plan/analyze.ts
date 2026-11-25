@@ -60,7 +60,7 @@ export function analyzePlan(plan: Plan, today: string) {
     completeness: totalWeight ? Math.round(((totalWeight - failingWeight) / totalWeight) * 100) : 0,
     checksPassed: checks.filter((c) => c.passed && c.severity !== "advice").length,
     checksTotal: checks.filter((c) => c.severity !== "advice").length,
-    auditReady: blockers.length === 0 && controlScore.complete,
+    auditReady: blockers.length === 0 && failing.every((c) => c.severity !== "gap") && controlScore.complete,
     controlScore,
     actions: buildActions(plan, reqs, failing, today),
     register: buildRegister(plan, reqs),

@@ -70,7 +70,7 @@ export function BriefView({
       ? [
           {
             id: "sector",
-            label: industry.name,
+            label: "Sector specifics",
             content: (
               <>
                 <h2>What is different for {industry.name.toLowerCase()}</h2>
@@ -104,7 +104,7 @@ export function BriefView({
       ? [
           {
             id: "country",
-            label: country.inEU ? `Selling in ${country.name}` : `Exporting from ${country.name}`,
+            label: country.inEU ? `Selling in ${country.name}` : "Exporting to the EU",
             content: (
               <>
                 <h2>{country.inEU ? `Selling in ${country.name}` : `Exporting from ${country.name} to the EU`}</h2>
@@ -128,6 +128,7 @@ export function BriefView({
           },
         ]
       : []),
+    ...extraTabs,
     {
       id: "requirements",
       label: "First requirements",
@@ -162,7 +163,6 @@ export function BriefView({
         </div>
       ),
     },
-    ...extraTabs,
     {
       id: "sources",
       label: "Sources",
@@ -188,7 +188,7 @@ export function BriefView({
       <p className="label">Free</p>
       <h3>Build the security plan for this product</h3>
       <p>Eight steps, preset for {industry ? industry.name.toLowerCase() : "your sector"}.</p>
-      <StartPlanButton industry={industry?.slug} />
+      <StartPlanButton industry={industry?.slug} label="Start my plan" />
       <a href={paths.assessment} className="muted-link">
         Or take the 10-minute readiness check
       </a>

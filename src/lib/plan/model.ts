@@ -218,7 +218,7 @@ export function examplePlan(): Plan {
       { id: "c-fw", name: "Thermostat firmware", kind: "firmware", version: "2.4.0", supplier: "In-house", internetFacing: true },
       { id: "c-rtos", name: "RTOS and Wi-Fi stack", kind: "third-party", version: "10.5", supplier: "Chip vendor SDK", internetFacing: true },
       { id: "c-app", name: "Mobile app (iOS, Android)", kind: "software", version: "3.1", supplier: "In-house", internetFacing: true },
-      { id: "c-cloud", name: "Device cloud API", kind: "cloud", version: "2026.11", supplier: "In-house on a public cloud", internetFacing: true },
+      { id: "c-cloud", name: "Device cloud API", kind: "cloud", version: "2026.11", supplier: "In-house", internetFacing: true },
     ],
     interfaces: ["Wi-Fi", "Bluetooth", "Mobile app", "Cloud API", "Over-the-air updates", "Debug port (JTAG / UART)"],
     data: ["User credentials", "Personal data", "Location", "Device telemetry", "Configuration and keys"],

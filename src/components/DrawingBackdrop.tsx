@@ -6,6 +6,7 @@ const GRID = 24;
 
 // Generated, not hand-drawn: a seeded "PCB trace" field plus one engineering-drawing motif,
 // so every page shares the same look while no two heroes are identical.
+// Traces stay in the right half (minX) so they never run behind the headline or lead text.
 export function DrawingBackdrop({ motif, seed = 7 }: { motif: Motif; seed?: number }) {
   const rand = mulberry32(seed);
   return (
@@ -52,8 +53,9 @@ function traces(rand: () => number) {
     [1, -1],
     [0, -1],
   ];
-  for (let i = 0; i < 16; i++) {
-    let x = Math.round((rand() * (W - 80)) / GRID) * GRID + GRID;
+  const minX = 312;
+  for (let i = 0; i < 11; i++) {
+    let x = minX + Math.round((rand() * (W - minX - 40)) / GRID) * GRID;
     let y = Math.round((rand() * (H - 80)) / GRID) * GRID + GRID;
     const start: [number, number] = [x, y];
     let d = `M${x} ${y}`;
@@ -61,7 +63,7 @@ function traces(rand: () => number) {
     const segs = 2 + Math.floor(rand() * 4);
     for (let s = 0; s < segs; s++) {
       const len = GRID * (1 + Math.floor(rand() * 4));
-      x = Math.min(W - 8, Math.max(8, x + dir[0] * len));
+      x = Math.min(W - 8, Math.max(minX, x + dir[0] * len));
       y = Math.min(H - 8, Math.max(8, y + dir[1] * len));
       d += ` L${x} ${y}`;
       dir = dirs[Math.floor(rand() * dirs.length)];

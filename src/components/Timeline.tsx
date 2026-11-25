@@ -106,7 +106,7 @@ function WideTimeline({ today, remaining }: { today: number; remaining: number }
       })}
 
       <line x1={tx} y1={axisY - 30} x2={tx} y2={226} stroke="var(--nonphoto)" strokeWidth="1.5" strokeDasharray="6 3 1.5 3" />
-      <line x1={endX} y1={axisY + 2} x2={endX} y2={226} stroke="var(--ink)" strokeWidth="1" />
+      <line x1={endX} y1={axisY + 32} x2={endX} y2={226} stroke="var(--ink)" strokeWidth="1" />
       <line x1={tx + 1} y1={212} x2={endX - 1} y2={212} stroke="var(--ink)" strokeWidth="1" markerStart="url(#tl-arrow)" markerEnd="url(#tl-arrow)" />
       <rect x={(tx + endX) / 2 - 62} y={196} width={124} height={30} fill="var(--paper)" />
       <text x={(tx + endX) / 2} y={217} textAnchor="middle" className="tl-dim">

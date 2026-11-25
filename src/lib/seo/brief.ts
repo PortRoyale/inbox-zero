@@ -24,7 +24,6 @@ export function buildBrief(industry?: Industry, country?: Country) {
   const summaryParts = [
     `The Cyber Resilience Act applies to ${industry ? industry.name.toLowerCase() : "connected products and software"} placed on the EU market${country && !country.inEU ? `, including those made in ${country.name}` : ""}.`,
     "Vulnerability and incident reporting has applied since 11 September 2026; all other obligations apply from 11 December 2027.",
-    cls ? `Typical category: ${cls.label}.` : "",
   ];
 
   const steps: BriefStep[] = [

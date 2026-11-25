@@ -40,6 +40,7 @@ export function SheetTabs({
     setInner(next);
     onValueChange?.(next);
     if (focus) btnRefs.current[next]?.focus();
+    btnRefs.current[next]?.scrollIntoView({ block: "nearest", inline: "nearest" });
     if (scroll) requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 

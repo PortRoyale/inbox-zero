@@ -8,6 +8,8 @@ import { formatDate, useToday } from "@/components/Timeline";
 import { readinessBand, scoreAssessment, type Answers, type AnswerStatus } from "@/lib/assessment-score";
 import { categories, productTypes, requirementsFor, type ProductType, type Requirement } from "@/lib/cra-requirements";
 import { assessmentReportText } from "@/lib/report-text";
+import { paths } from "@/lib/paths";
+import { PLAN_FROM_ASSESSMENT_KEY } from "@/lib/plan/storage";
 import { regulation } from "@/lib/site";
 
 const STORAGE_KEY = "cra-assessment-v1";
@@ -143,7 +145,7 @@ export function Assessment() {
       label: "Your report",
       content:
         score.answeredCount > 0 ? (
-          <Report productName={productName} types={types} score={score} itemIds={itemIds} />
+          <Report productName={productName} types={types} score={score} itemIds={itemIds} answers={answers} />
         ) : (
           <p className="note-line">Answer at least one item to see your report.</p>
         ),
@@ -254,11 +256,13 @@ function Report({
   types,
   score,
   itemIds,
+  answers,
 }: {
   productName: string;
   types: ProductType[];
   score: ReturnType<typeof scoreAssessment>;
   itemIds: Record<string, string>;
+  answers: Answers;
 }) {
   const today = useToday();
   const band = readinessBand(score.percent);
@@ -342,9 +346,25 @@ function Report({
 
       <div className="report-cta">
         <div>
-          <h3>Want help closing these gaps?</h3>
-          <p>Early-access customers get the security plan builder, SBOM watch and a review of this report with a security expert.</p>
+          <h3>Turn this report into your security plan</h3>
+          <p>Your {score.answeredCount} answers carry over. The plan builder adds the risk assessment, evidence and a dated action plan for every gap.</p>
         </div>
+        <a
+          className="btn btn-on-ink"
+          href={paths.plan}
+          onClick={() => {
+            try {
+              localStorage.setItem(PLAN_FROM_ASSESSMENT_KEY, JSON.stringify({ productName, types, answers }));
+            } catch {
+              // Without storage the plan builder still opens; answers can be imported there.
+            }
+          }}
+        >
+          Build my plan from these answers
+        </a>
+      </div>
+      <div className="report-help">
+        <p>Want a security expert to review this with you?</p>
         <ContactLine />
       </div>
       <p className="label">Self-assessment guidance. Not legal advice or a conformity assessment.</p>

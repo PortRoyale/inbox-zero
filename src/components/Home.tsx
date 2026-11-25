@@ -79,7 +79,7 @@ export function Home() {
         <ul className="tool-cards">
           {tools.map((t, i) => (
             <li key={t.name} className={t.featured ? "is-featured" : undefined}>
-              <div className="row">
+              <div className="card-head">
                 <Balloon>{i + 1}</Balloon>
                 <h3>{t.name}</h3>
               </div>

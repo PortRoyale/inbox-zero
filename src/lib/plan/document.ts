@@ -40,7 +40,7 @@ export function planToMarkdown(plan: Plan, a: PlanAnalysis, fingerprint: string,
       ["Content fingerprint (SHA-256)", `\`${fingerprint}\``],
       ["Generated", generatedOn],
       ["Plan completeness", `${a.completeness}% (${a.checksPassed}/${a.checksTotal} checks passed)`],
-      ["Audit-ready", a.auditReady ? "Yes" : `No: ${a.blockers.length} blocking item(s)`],
+      ["Audit-ready", a.auditReady ? "Yes" : `No: ${a.blockers.length} blocking, ${a.gaps.length} gap(s) open`],
     ],
   );
 

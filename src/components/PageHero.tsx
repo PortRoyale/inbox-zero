@@ -31,8 +31,8 @@ export function PageHero({
   const H = level === 1 ? "h1" : "h2";
   return (
     <section className="sheet page-hero" aria-labelledby={id}>
-      <DrawingBackdrop motif={motif} seed={seed} />
       <div className="page-hero-grid">
+        <DrawingBackdrop motif={motif} seed={seed} />
         <div className="page-hero-body">
           {above}
           <Fcf keyCell={label} cells={cells} />

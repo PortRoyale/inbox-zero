@@ -6,6 +6,7 @@ import type { CraClass } from "@/content/types";
 import { AreaField, Chips, SelectField, TextField, Toggle } from "@/components/plan/fields";
 import { Markdown } from "@/components/plan/Markdown";
 import { PageHero } from "@/components/PageHero";
+import { SheetTabs } from "@/components/SheetTabs";
 import { Balloon, ConfirmButton, CopyButton, Fcf } from "@/components/primitives";
 import { formatDate, useToday } from "@/components/Timeline";
 import type { AnswerStatus } from "@/lib/assessment-score";
@@ -29,7 +30,7 @@ import {
   type Risk,
 } from "@/lib/plan/model";
 import { riskLevel, riskScore, suggestRisks } from "@/lib/plan/risks";
-import { PLAN_PRESET_KEY, PLAN_STORAGE_KEY } from "@/lib/plan/storage";
+import { PLAN_FROM_ASSESSMENT_KEY, PLAN_PRESET_KEY, PLAN_STORAGE_KEY } from "@/lib/plan/storage";
 import { disclosurePolicy, reportingRunbook, securityTxt } from "@/lib/plan/templates";
 
 const ASSESSMENT_KEY = "cra-assessment-v1";
@@ -61,6 +62,7 @@ export function PlanBuilder() {
   const [step, setStep] = useState(0);
   const [advanced, setAdvanced] = useState(false);
   const [view, setView] = useState<"build" | "document">("build");
+  const [importedNote, setImportedNote] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [fingerprint, setFingerprint] = useState("");
   const topRef = useRef<HTMLDivElement>(null);
@@ -69,7 +71,17 @@ export function PlanBuilder() {
     try {
       const preset = localStorage.getItem(PLAN_PRESET_KEY);
       const saved = localStorage.getItem(PLAN_STORAGE_KEY);
-      if (preset) {
+      const fromAssessment = localStorage.getItem(PLAN_FROM_ASSESSMENT_KEY);
+      if (fromAssessment) {
+        localStorage.removeItem(PLAN_FROM_ASSESSMENT_KEY);
+        const a = JSON.parse(fromAssessment) as { productName: string; types: ProductType[]; answers: Record<string, AnswerStatus | undefined> };
+        const base = emptyPlan();
+        const controls: Plan["controls"] = {};
+        for (const [id, status] of Object.entries(a.answers)) if (status) controls[id] = { status, how: "", evidence: "" };
+        setPlan(withRisks({ ...base, product: { ...base.product, name: a.productName, types: a.types }, controls }));
+        setIsExample(false);
+        setImportedNote(`Started from your readiness check: ${Object.keys(controls).length} requirement answers carried over.`);
+      } else if (preset) {
         localStorage.removeItem(PLAN_PRESET_KEY);
         setPlan(withRisks(applyIndustry(emptyPlan(), preset)));
         setIsExample(false);
@@ -136,42 +148,50 @@ export function PlanBuilder() {
         lead="Eight short steps produce the technical documentation the CRA asks for. Gaps are never hidden; they become actions with owners and dates."
         aside={<PlanStatus analysis={analysis} />}
       >
-        {isExample && (
-          <div className="example-banner">
-            <p>
-              <strong>Example plan loaded</strong> for a fictional smart thermostat. Edit anything to make it yours, or start blank.
+        <div className="plan-toolbar">
+          {isExample ? (
+            <p className="toolbar-note">
+              <strong>Example plan</strong> for a fictional thermostat.
             </p>
-            <div className="row">
-              <SelectField
+          ) : importedNote ? (
+            <p className="toolbar-note">{importedNote}</p>
+          ) : null}
+          {isExample && (
+            <label className="toolbar-field" htmlFor="start-industry">
+              <span className="label">Start yours</span>
+              <select
                 id="start-industry"
-                label="Start blank for"
                 value=""
-                options={[{ value: "", label: "Choose your sector" }, ...industries.map((i) => ({ value: i.slug, label: i.name }))]}
-                onChange={(slug) => {
-                  setPlan(withRisks(applyIndustry(emptyPlan(), slug)));
+                onChange={(e) => {
+                  setPlan(withRisks(applyIndustry(emptyPlan(), e.target.value)));
                   setIsExample(false);
                   go(0);
                 }}
-              />
-              <button type="button" className="btn" onClick={startBlank}>
-                Start blank
+              >
+                <option value="">Choose your sector…</option>
+                {industries.map((i) => (
+                  <option key={i.slug} value={i.slug}>
+                    {i.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {isExample && (
+            <button type="button" className="btn btn-quiet" onClick={startBlank}>
+              Start blank
+            </button>
+          )}
+          <div className="toolbar-segs">
+            <div className="seg" role="radiogroup" aria-label="View">
+              <button type="button" role="radio" aria-checked={view === "build"} onClick={() => setView("build")}>
+                Build
+              </button>
+              <button type="button" role="radio" aria-checked={view === "document"} onClick={() => setView("document")}>
+                Document
               </button>
             </div>
-          </div>
-        )}
-        <div className="mode-row">
-          <span className="label">View</span>
-          <div className="seg" role="radiogroup" aria-label="View">
-            <button type="button" role="radio" aria-checked={view === "build"} onClick={() => setView("build")}>
-              Build steps
-            </button>
-            <button type="button" role="radio" aria-checked={view === "document"} onClick={() => setView("document")}>
-              Document
-            </button>
-          </div>
-          {view === "build" && (
-            <>
-              <span className="label">Detail</span>
+            {view === "build" && (
               <div className="seg" role="radiogroup" aria-label="Detail level">
                 <button type="button" role="radio" aria-checked={!advanced} onClick={() => setAdvanced(false)}>
                   Simple
@@ -180,8 +200,8 @@ export function PlanBuilder() {
                   Advanced
                 </button>
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </PageHero>
 
@@ -197,7 +217,7 @@ export function PlanBuilder() {
                   <button type="button" className={`step-btn is-${state}`} aria-current={i === step ? "step" : undefined} onClick={() => go(i)}>
                     <Balloon>{i + 1}</Balloon>
                     <span className="step-label">{s.label}</span>
-                    <span className="step-state code">{state === "done" ? "✓" : st.failing}</span>
+                    <span className="step-state code">{state === "done" ? "✓" : `${st.failing} open`}</span>
                   </button>
                 </li>
               );
@@ -269,20 +289,56 @@ export function PlanBuilder() {
       )}
 
       {view === "document" && (
-      <section className="sheet doc-sheet" aria-labelledby="doc-title">
-        <div className="sheet-head">
-          <div>
-            <Fcf keyCell="Live document" cells={[planTitle(plan), fingerprint ? `SHA-256 ${fingerprint.slice(0, 12)}…` : "…"]} />
-            <h2 id="doc-title">The plan, as an auditor will read it</h2>
-            <p className="muted">Updates as you type. Every gap is marked and appears in the action plan (section 11).</p>
-          </div>
-          <ExportButtons plan={plan} markdown={markdown} />
-        </div>
-        <Markdown source={markdown} />
-      </section>
+        <SheetTabs
+          label="Plan sections"
+          items={splitSections(markdown).map((sec, i) => ({
+            id: `doc-${i}`,
+            label: sec.title,
+            state: sec.body.includes("[GAP:") ? ("open" as const) : undefined,
+            badge: sec.body.includes("[GAP:") ? plural((sec.body.match(/\[GAP:/g) ?? []).length, "gap") : undefined,
+            content: <Markdown source={sec.body} />,
+          }))}
+          side={
+            <div className="sheet doc-side">
+              <p className="label">Content fingerprint</p>
+              <p className="code fingerprint">{fingerprint ? `${fingerprint.slice(0, 16)}…` : "Calculating…"}</p>
+              <p className="muted">Updates as you type. Gaps are marked in red and listed in the action plan.</p>
+              <ExportButtons plan={plan} markdown={markdown} />
+            </div>
+          }
+        />
       )}
     </div>
   );
+}
+
+const SECTION_SHORT: Record<number, string> = {
+  1: "1. Document control",
+  2: "2. Product and purpose",
+  3: "3. Architecture and SBOM",
+  4: "4. Risk assessment",
+  5: "5. Essential requirements",
+  6: "6. Development and testing",
+  7: "7. Vulnerability handling",
+  8: "8. Updates and reporting",
+  9: "9. Conformity route",
+  10: "10. Evidence register",
+  11: "11. Action plan",
+  12: "12. Sign-off",
+};
+
+function plural(n: number, word: string) {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
+
+function splitSections(md: string) {
+  const parts = md.split(/\n(?=## )/);
+  return parts.map((part, i) => {
+    const heading = /^## (.*)$/m.exec(part);
+    const num = heading ? Number(heading[1].split(".")[0]) : 0;
+    const title = i === 0 ? "Cover" : (SECTION_SHORT[num] ?? heading?.[1] ?? `Part ${i}`);
+    return { title, body: part };
+  });
 }
 
 function exampleWithOwners(): Plan {
@@ -297,6 +353,11 @@ function withRisks(plan: Plan): Plan {
 type StepProps = { plan: Plan; update: (fn: (p: Plan) => Plan) => void; advanced: boolean };
 
 function PlanStatus({ analysis }: { analysis: ReturnType<typeof analyzePlan> }) {
+  const status = analysis.blockers.length
+    ? { text: `${analysis.blockers.length} blocking`, cls: "text-redline" }
+    : analysis.gaps.length
+      ? { text: `${analysis.gaps.length} gaps open`, cls: "" }
+      : { text: "Audit-ready", cls: "mark mark-done" };
   return (
     <dl className="tblock plan-status">
       <div>
@@ -308,17 +369,15 @@ function PlanStatus({ analysis }: { analysis: ReturnType<typeof analyzePlan> }) 
           <span style={{ width: `${analysis.completeness}%` }} />
         </div>
       </div>
-      <div>
-        <dt>Blocking items</dt>
-        <dd className={`code${analysis.blockers.length ? " text-redline" : ""}`}>{analysis.blockers.length}</dd>
-      </div>
-      <div>
-        <dt>Open actions</dt>
-        <dd className="code">{analysis.actions.length}</dd>
-      </div>
-      <div>
-        <dt>Audit-ready</dt>
-        <dd>{analysis.auditReady ? <span className="mark mark-done code">YES</span> : <span className="code text-redline">NOT YET</span>}</dd>
+      <div className="status-split">
+        <div>
+          <dt>Status</dt>
+          <dd className={`code ${status.cls}`}>{status.text}</dd>
+        </div>
+        <div>
+          <dt>Actions</dt>
+          <dd className="code">{analysis.actions.length}</dd>
+        </div>
       </div>
     </dl>
   );
@@ -394,9 +453,9 @@ function ProductStep({ plan, update, advanced }: StepProps) {
           onChange={(supportEnd) => set({ supportEnd })}
           hint="Normally at least five years after placing on the market."
         />
-        {p.marketDate && (
-          <button type="button" className="btn btn-quiet" onClick={() => set({ supportEnd: addYears(p.marketDate, 5) })}>
-            Set to 5 years
+        {p.marketDate && p.supportEnd !== addYears(p.marketDate, 5) && (
+          <button type="button" className="link-btn" onClick={() => set({ supportEnd: addYears(p.marketDate, 5) })}>
+            Set to {addYears(p.marketDate, 5)} (5 years after market date)
           </button>
         )}
       </div>
@@ -482,19 +541,11 @@ function ArchitectureStep({ plan, update, advanced }: StepProps) {
                   { value: "software", label: "Software" },
                   { value: "cloud", label: "Cloud" },
                   { value: "hardware", label: "Hardware" },
-                  { value: "third-party", label: "Third-party / open source" },
+                  { value: "third-party", label: "Third-party" },
                 ]}
                 onChange={(kind) => setComp(c.id, { kind })}
               />
-              {(advanced || c.kind === "third-party") && (
-                <TextField id={`c-sup-${c.id}`} label="Supplier" value={c.supplier} onChange={(supplier) => setComp(c.id, { supplier })} />
-              )}
-              {advanced && (
-                <>
-                  <TextField id={`c-ver-${c.id}`} label="Version" value={c.version} onChange={(version) => setComp(c.id, { version })} />
-                  <Toggle id={`c-net-${c.id}`} label="Internet-facing" checked={c.internetFacing} onChange={(internetFacing) => setComp(c.id, { internetFacing })} />
-                </>
-              )}
+              <TextField id={`c-sup-${c.id}`} label="Supplier" value={c.supplier} onChange={(supplier) => setComp(c.id, { supplier })} placeholder="In-house" />
               <button
                 type="button"
                 className="btn btn-quiet comp-remove"
@@ -503,6 +554,12 @@ function ArchitectureStep({ plan, update, advanced }: StepProps) {
               >
                 Remove
               </button>
+              {advanced && (
+                <div className="comp-extra">
+                  <TextField id={`c-ver-${c.id}`} label="Version" value={c.version} onChange={(version) => setComp(c.id, { version })} />
+                  <Toggle id={`c-net-${c.id}`} label="Internet-facing" checked={c.internetFacing} onChange={(internetFacing) => setComp(c.id, { internetFacing })} />
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -517,71 +574,91 @@ function ArchitectureStep({ plan, update, advanced }: StepProps) {
 function RisksStep({ plan, update, advanced }: StepProps) {
   const setRisk = (id: string, patch: Partial<Risk>) => update((x) => ({ ...x, risks: x.risks.map((r) => (r.id === id ? { ...r, ...patch } : r)) }));
   const level = (r: Risk) => riskLevel(riskScore(r));
+  const kept = plan.risks.filter((r) => r.include).length;
+  const scale = (id: string, label: string, value: number, onChange: (v: 1 | 2 | 3) => void) => (
+    <select id={id} aria-label={label} value={String(value)} onChange={(e) => onChange(Number(e.target.value) as 1 | 2 | 3)}>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+  );
+  if (plan.risks.length === 0) {
+    return <p className="note-line">Describe what the product includes in step 1 and its interfaces in step 2. Risks are suggested from those answers.</p>;
+  }
   return (
     <div className="stack-sm">
       <p className="muted">
-        {plan.risks.length} risks suggested from your interfaces and data. Keep the ones that apply and choose how you treat
-        each. {advanced ? "Scores are likelihood × impact (1–3 each)." : "Switch to Advanced to change scores and owners."}
+        {plan.risks.length} risks suggested from your interfaces and data; {kept} kept. Untick any that don't apply and pick a treatment.{" "}
+        {advanced ? "L is likelihood and I is impact, each from 1 (low) to 3 (high)." : "Advanced adds scores, owners and your own risks."}
       </p>
-      <ol className="risk-list">
-        {plan.risks.map((r, i) => (
-          <li key={r.id} className={`risk-row${r.include ? "" : " is-excluded"}`}>
-            <div className="risk-main">
-              <Toggle id={`r-inc-${r.id}`} label={`R${i + 1}. ${r.threat}`} checked={r.include} onChange={(include) => setRisk(r.id, { include })} hint={`Asset: ${r.asset}. Control: ${r.control}`} />
-              <span className={`risk-level risk-${level(r)} code`}>{level(r)}</span>
-            </div>
-            {r.include && (
-              <div className="risk-fields">
-                <SelectField<Risk["treatment"]>
-                  id={`r-tr-${r.id}`}
-                  label="Treatment"
-                  value={r.treatment}
-                  options={[
-                    { value: "mitigate", label: "Mitigate" },
-                    { value: "accept", label: "Accept" },
-                    { value: "transfer", label: "Transfer" },
-                    { value: "avoid", label: "Avoid (remove feature)" },
-                  ]}
-                  onChange={(treatment) => setRisk(r.id, { treatment })}
-                />
+      <div className="table-scroll">
+        <table className="drawing risk-table">
+          <thead>
+            <tr>
+              <th scope="col">Keep</th>
+              <th scope="col">Risk and planned control</th>
+              <th scope="col">Level</th>
+              <th scope="col">Treatment</th>
+              {advanced && (
+                <>
+                  <th scope="col" title="Likelihood, 1 low to 3 high">L</th>
+                  <th scope="col" title="Impact, 1 low to 3 high">I</th>
+                </>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {plan.risks.map((r, i) => (
+              <tr key={r.id} className={r.include ? undefined : "is-excluded"}>
+                <td>
+                  <input type="checkbox" className="risk-check" aria-label={`Keep R${i + 1}`} checked={r.include} onChange={(e) => setRisk(r.id, { include: e.target.checked })} />
+                </td>
+                <td className="risk-cell">
+                  {advanced && r.custom ? (
+                    <>
+                      <input aria-label={`R${i + 1} threat`} value={r.threat} onChange={(e) => setRisk(r.id, { threat: e.target.value })} />
+                      <input aria-label={`R${i + 1} control`} value={r.control} onChange={(e) => setRisk(r.id, { control: e.target.value })} />
+                    </>
+                  ) : (
+                    <>
+                      <strong>
+                        R{i + 1}. {r.threat}
+                      </strong>
+                      <span className="risk-sub">{r.control}</span>
+                    </>
+                  )}
+                  {advanced && r.include && (
+                    <input className="owner-input" aria-label={`Owner for R${i + 1}`} value={r.owner} placeholder="Owner" onChange={(e) => setRisk(r.id, { owner: e.target.value })} />
+                  )}
+                  {r.include && r.treatment === "accept" && (
+                    <span className="accept-fields">
+                      <input aria-label={`R${i + 1} accepted by`} placeholder="Accepted by (name)" value={r.acceptedBy} onChange={(e) => setRisk(r.id, { acceptedBy: e.target.value })} />
+                      <input aria-label={`R${i + 1} review date`} type="date" value={r.reviewBy} onChange={(e) => setRisk(r.id, { reviewBy: e.target.value })} />
+                    </span>
+                  )}
+                </td>
+                <td>
+                  <span className={`risk-level risk-${level(r)} code`}>{level(r)}</span>
+                </td>
+                <td>
+                  <select aria-label={`Treatment for R${i + 1}`} value={r.treatment} disabled={!r.include} onChange={(e) => setRisk(r.id, { treatment: e.target.value as Risk["treatment"] })}>
+                    <option value="mitigate">Mitigate</option>
+                    <option value="accept">Accept</option>
+                    <option value="transfer">Transfer</option>
+                    <option value="avoid">Avoid</option>
+                  </select>
+                </td>
                 {advanced && (
                   <>
-                    <SelectField
-                      id={`r-l-${r.id}`}
-                      label="Likelihood"
-                      value={String(r.likelihood) as "1" | "2" | "3"}
-                      options={[
-                        { value: "1", label: "1 Low" },
-                        { value: "2", label: "2 Medium" },
-                        { value: "3", label: "3 High" },
-                      ]}
-                      onChange={(v) => setRisk(r.id, { likelihood: Number(v) as 1 | 2 | 3 })}
-                    />
-                    <SelectField
-                      id={`r-i-${r.id}`}
-                      label="Impact"
-                      value={String(r.impact) as "1" | "2" | "3"}
-                      options={[
-                        { value: "1", label: "1 Low" },
-                        { value: "2", label: "2 Medium" },
-                        { value: "3", label: "3 High" },
-                      ]}
-                      onChange={(v) => setRisk(r.id, { impact: Number(v) as 1 | 2 | 3 })}
-                    />
-                    <TextField id={`r-o-${r.id}`} label="Owner" value={r.owner} onChange={(owner) => setRisk(r.id, { owner })} />
+                    <td>{scale(`r-l-${r.id}`, `Likelihood for R${i + 1}`, r.likelihood, (likelihood) => setRisk(r.id, { likelihood }))}</td>
+                    <td>{scale(`r-i-${r.id}`, `Impact for R${i + 1}`, r.impact, (impact) => setRisk(r.id, { impact }))}</td>
                   </>
                 )}
-                {r.treatment === "accept" && (
-                  <>
-                    <TextField id={`r-a-${r.id}`} label="Accepted by" required value={r.acceptedBy} onChange={(acceptedBy) => setRisk(r.id, { acceptedBy })} />
-                    <TextField id={`r-rv-${r.id}`} label="Review by" type="date" value={r.reviewBy} onChange={(reviewBy) => setRisk(r.id, { reviewBy })} />
-                  </>
-                )}
-              </div>
-            )}
-          </li>
-        ))}
-      </ol>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {advanced && (
         <button
           type="button"
@@ -593,7 +670,7 @@ function RisksStep({ plan, update, advanced }: StepProps) {
                 ...x.risks,
                 {
                   id: newId("r-custom"),
-                  threat: "New risk: describe the threat",
+                  threat: "Describe the threat",
                   asset: "Asset",
                   likelihood: 2,
                   impact: 2,
@@ -609,7 +686,7 @@ function RisksStep({ plan, update, advanced }: StepProps) {
             }))
           }
         >
-          + Add custom risk
+          + Add your own risk
         </button>
       )}
     </div>
@@ -618,6 +695,9 @@ function RisksStep({ plan, update, advanced }: StepProps) {
 
 function ControlsStep({ plan, update, advanced, reqs }: StepProps & { reqs: ReturnType<typeof analyzePlan>["reqs"] }) {
   const [imported, setImported] = useState<string | null>(null);
+  const [catIndex, setCatIndex] = useState(0);
+  const groups = categories.map((cat) => ({ cat, items: reqs.filter((r) => r.category === cat.id) })).filter((g) => g.items.length > 0);
+  const group = groups[Math.min(catIndex, groups.length - 1)];
   const setCtl = (id: string, patch: Partial<Plan["controls"][string]>) =>
     update((x) => ({ ...x, controls: { ...x.controls, [id]: { ...(x.controls[id] ?? { how: "", evidence: "" }), ...patch } } }));
   const importAssessment = () => {
@@ -654,57 +734,78 @@ function ControlsStep({ plan, update, advanced, reqs }: StepProps & { reqs: Retu
         </div>
       </div>
       {imported && <p className="note-line">{imported}</p>}
-      {categories.map((cat) => {
-        const inCat = reqs.filter((r) => r.category === cat.id);
-        if (!inCat.length) return null;
-        return (
-          <div key={cat.id} className="ctl-group">
-            <p className="label">{cat.label}</p>
-            <ul>
-              {inCat.map((r) => {
-                const e = plan.controls[r.id];
-                return (
-                  <li key={r.id} className="ctl-row">
-                    <div className="ctl-head">
-                      <p id={`ctl-${r.id}`}>
-                        <strong>{r.title}</strong> <span className={`prio prio-${r.priority}`}>{r.priority}</span>
-                      </p>
-                      <div className="seg" role="radiogroup" aria-labelledby={`ctl-${r.id}`}>
-                        {STATUS_OPTIONS.map((o) => (
-                          <button key={o.value} type="button" role="radio" data-status={o.value} aria-checked={e?.status === o.value} onClick={() => setCtl(r.id, { status: o.value })}>
-                            {o.label}
-                          </button>
-                        ))}
-                      </div>
+      <div className="cat-pills" role="tablist" aria-label="Requirement categories">
+        {groups.map((g, gi) => {
+          const answered = g.items.filter((r) => plan.controls[r.id]?.status).length;
+          const gaps = g.items.filter((r) => ["missing", "partial"].includes(plan.controls[r.id]?.status ?? "")).length;
+          return (
+            <button
+              key={g.cat.id}
+              type="button"
+              role="tab"
+              aria-selected={gi === catIndex}
+              className={`cat-pill${gi === catIndex ? " is-on" : ""}`}
+              onClick={() => setCatIndex(gi)}
+            >
+              <span>{g.cat.label}</span>
+              <span className="code">
+                {answered < g.items.length ? `${answered}/${g.items.length}` : gaps ? `${gaps} gap${gaps > 1 ? "s" : ""}` : "✓"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {group && (
+        <div className="ctl-group" role="tabpanel" aria-label={group.cat.label}>
+          <ul>
+            {group.items.map((r) => {
+              const e = plan.controls[r.id];
+              return (
+                <li key={r.id} className="ctl-row">
+                  <div className="ctl-head">
+                    <p id={`ctl-${r.id}`}>
+                      <strong>{r.title}</strong> <span className={`prio prio-${r.priority}`}>{r.priority}</span>
+                    </p>
+                    <div className="seg" role="radiogroup" aria-labelledby={`ctl-${r.id}`}>
+                      {STATUS_OPTIONS.map((o) => (
+                        <button key={o.value} type="button" role="radio" data-status={o.value} aria-checked={e?.status === o.value} onClick={() => setCtl(r.id, { status: o.value })}>
+                          {o.label}
+                        </button>
+                      ))}
                     </div>
-                    {(advanced || e?.status === "na") && (
-                      <div className="ctl-fields">
-                        <AreaField
-                          id={`how-${r.id}`}
-                          rows={2}
-                          label={e?.status === "na" ? "Why it does not apply" : "How we meet it"}
-                          value={e?.how ?? ""}
-                          onChange={(how) => setCtl(r.id, { how })}
-                          placeholder={r.guidance}
+                  </div>
+                  {(advanced || e?.status === "na") && (
+                    <div className="ctl-fields">
+                      <AreaField
+                        id={`how-${r.id}`}
+                        rows={2}
+                        label={e?.status === "na" ? "Why it does not apply" : "How we meet it"}
+                        value={e?.how ?? ""}
+                        onChange={(how) => setCtl(r.id, { how })}
+                        placeholder={r.guidance}
+                      />
+                      {advanced && (
+                        <TextField
+                          id={`ev-${r.id}`}
+                          label="Evidence (link or document ID)"
+                          value={e?.evidence ?? ""}
+                          onChange={(evidence) => setCtl(r.id, { evidence })}
+                          placeholder="e.g. TEST-042 pen test report, Jira SEC-118"
                         />
-                        {advanced && (
-                          <TextField
-                            id={`ev-${r.id}`}
-                            label="Evidence (link or document ID)"
-                            value={e?.evidence ?? ""}
-                            onChange={(evidence) => setCtl(r.id, { evidence })}
-                            placeholder="e.g. TEST-042 pen test report, Jira SEC-118"
-                          />
-                        )}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        );
-      })}
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {catIndex < groups.length - 1 && (
+            <button type="button" className="btn btn-quiet next-cat" onClick={() => setCatIndex(catIndex + 1)}>
+              Next category: {groups[catIndex + 1].cat.label} →
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -877,13 +978,6 @@ function ReviewStep({
 
   return (
     <div className="stack-sm">
-      <div className="form-grid">
-        <TextField id="role-sec" label="Security lead" value={plan.roles.securityLead} onChange={(securityLead) => setRole({ securityLead })} />
-        <TextField id="role-eng" label="Engineering lead" value={plan.roles.engineeringLead} onChange={(engineeringLead) => setRole({ engineeringLead })} />
-        <TextField id="role-po" label="Product owner (approver)" value={plan.roles.productOwner} onChange={(productOwner) => setRole({ productOwner })} />
-        <TextField id="role-legal" label="Legal / compliance contact" value={plan.roles.legalContact} onChange={(legalContact) => setRole({ legalContact })} />
-      </div>
-
       <div className="review-checks">
         <Fcf redline={failing.some((c) => c.severity === "blocker")} keyCell="Quality gate" cells={[`${analysis.checksPassed}/${analysis.checksTotal} passed`, `${analysis.blockers.length} blocking`]} />
         {failing.length === 0 ? (
@@ -895,9 +989,11 @@ function ReviewStep({
                 <span className="issue-sev code">{c.severity}</span>
                 <span>
                   <strong>{c.message}.</strong> {c.fix}{" "}
-                  <button type="button" className="link-btn" onClick={() => onJump(c.step)}>
-                    Go to {STEPS.find((s) => s.id === c.step)?.label}
-                  </button>
+                  {c.step !== "review" && (
+                    <button type="button" className="link-btn" onClick={() => onJump(c.step)}>
+                      Go to {STEPS.find((s) => s.id === c.step)?.label}
+                    </button>
+                  )}
                 </span>
               </li>
             ))}
@@ -905,6 +1001,13 @@ function ReviewStep({
         )}
       </div>
 
+      <p className="label">People</p>
+      <div className="form-grid">
+        <TextField id="role-sec" label="Security lead" value={plan.roles.securityLead} onChange={(securityLead) => setRole({ securityLead })} />
+        <TextField id="role-eng" label="Engineering lead" value={plan.roles.engineeringLead} onChange={(engineeringLead) => setRole({ engineeringLead })} />
+        <TextField id="role-po" label="Product owner (approver)" value={plan.roles.productOwner} onChange={(productOwner) => setRole({ productOwner })} />
+        <TextField id="role-legal" label="Legal / compliance contact" value={plan.roles.legalContact} onChange={(legalContact) => setRole({ legalContact })} />
+      </div>
       <div className="issue-rev">
         <Fcf keyCell="Issue revision" cells={[nextRevisionLetter(plan.revisions), changed ? "Edited since last issue" : latest ? `Matches Rev ${latest.rev}` : "First issue"]} />
         <p className="muted">
@@ -921,8 +1024,8 @@ function ReviewStep({
         {analysis.blockers.length > 0 && <p className="note-line">You can issue a draft revision now; it will record {analysis.blockers.length} blocking item(s) as open.</p>}
       </div>
 
-      <div className="backup">
-        <p className="label">Back up or move this plan</p>
+      <details className="backup">
+        <summary className="label">Back up, move or clear this plan</summary>
         <div className="row">
           <CopyButton label="Copy plan backup (JSON)" getText={() => JSON.stringify(plan, null, 2)} />
           <label className="btn btn-quiet file-btn" htmlFor="plan-import-file">
@@ -946,7 +1049,7 @@ function ReviewStep({
           <ConfirmButton label="Clear plan" confirmLabel="Clear everything" onConfirm={() => onImport(emptyPlan())} />
         </div>
         {importMsg && <p className="note-line">{importMsg}</p>}
-      </div>
+      </details>
       <p className="muted">Switch to the Document view to read the full plan and copy it as Markdown{canDownload ? " or download it" : ""}.</p>
     </div>
   );
@@ -954,13 +1057,17 @@ function ReviewStep({
 
 function TemplateBlock({ title, text }: { title: string; text: string }) {
   return (
-    <div className="template">
-      <div className="row-between">
-        <p className="label">{title}</p>
+    <details className="template">
+      <summary>
+        <span className="label">{title}</span>
+        <span className="muted">Generated from your answers. Open to copy.</span>
+      </summary>
+      <div className="row-between template-actions">
+        <span className="muted">Review before publishing.</span>
         <CopyButton label="Copy" getText={() => text} />
       </div>
       <pre className="code">{text}</pre>
-    </div>
+    </details>
   );
 }
 
