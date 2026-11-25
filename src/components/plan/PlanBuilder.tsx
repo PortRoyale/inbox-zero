@@ -366,19 +366,17 @@ function PlanStatus({ analysis }: { analysis: ReturnType<typeof analyzePlan> }) 
         <dd className="code">
           {analysis.completeness}% · {analysis.checksPassed}/{analysis.checksTotal} checks
         </dd>
-        <div className="gauge">
+        <dd className="gauge" aria-hidden="true">
           <span style={{ width: `${analysis.completeness}%` }} />
-        </div>
+        </dd>
       </div>
-      <div className="status-split">
-        <div>
-          <dt>Status</dt>
-          <dd className={`code ${status.cls}`}>{status.text}</dd>
-        </div>
-        <div>
-          <dt>Actions</dt>
-          <dd className="code">{analysis.actions.length}</dd>
-        </div>
+      <div>
+        <dt>Status</dt>
+        <dd className={`code ${status.cls}`}>{status.text}</dd>
+      </div>
+      <div>
+        <dt>Actions</dt>
+        <dd className="code">{analysis.actions.length}</dd>
       </div>
     </dl>
   );

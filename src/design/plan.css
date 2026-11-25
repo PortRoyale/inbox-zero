@@ -1651,3 +1651,25 @@ details.template {
 .regimes legend {
   padding: 0 var(--s-2);
 }
+
+.cta-title {
+  font-size: var(--t-4);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.plan-status {
+  grid-template-columns: 1fr 1fr;
+}
+
+.plan-status > div:first-child {
+  grid-column: 1 / -1;
+}
+
+.plan-status > div:nth-child(2) {
+  border-right: var(--lw-thin) solid var(--ink);
+}
+
+.plan-status > div:nth-child(n + 2) {
+  border-bottom: 0;
+}

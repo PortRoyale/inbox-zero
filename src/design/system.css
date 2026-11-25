@@ -29,9 +29,9 @@
   color-scheme: light;
 
   /* B612 (cockpit display face) for headings only: its parentheses read as brackets, which breaks legal citations. */
-  --font-display: "B612", "Segoe UI", "DejaVu Sans", system-ui, sans-serif;
-  --font-text: "Atkinson Hyperlegible Next", "Segoe UI", "DejaVu Sans", system-ui, sans-serif;
-  --font-code: "Atkinson Hyperlegible Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+  --font-display: var(--ff-display, "B612"), "Segoe UI", "DejaVu Sans", system-ui, sans-serif;
+  --font-text: var(--ff-text, "Atkinson Hyperlegible Next"), "Segoe UI", "DejaVu Sans", system-ui, sans-serif;
+  --font-code: var(--ff-code, "Atkinson Hyperlegible Mono"), "DejaVu Sans Mono", ui-monospace, monospace;
 
   /* ⁴√2 type scale */
   --t-1: 0.707rem;

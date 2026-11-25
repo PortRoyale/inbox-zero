@@ -87,7 +87,7 @@ export function GuideView({ guide, related, crumbs }: { guide: Guide; related: G
         side={
           <div className="brief-cta">
             <p className="label">Free</p>
-            <h3>Turn this into your technical documentation</h3>
+            <p className="cta-title">Turn this into your technical documentation</p>
             <p>Eight steps. Every gap becomes a dated action.</p>
             <StartPlanButton label="Start my plan" />
             <a href={paths.assessment} className="muted-link">

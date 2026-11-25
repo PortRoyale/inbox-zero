@@ -186,7 +186,7 @@ export function BriefView({
   const cta = (
     <div className="brief-cta">
       <p className="label">Free</p>
-      <h3>Build the security plan for this product</h3>
+      <p className="cta-title">Build the security plan for this product</p>
       <p>Eight steps, preset for {industry ? industry.name.toLowerCase() : "your sector"}.</p>
       <StartPlanButton industry={industry?.slug} label="Start my plan" />
       <a href={paths.assessment} className="muted-link">
