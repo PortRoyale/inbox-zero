@@ -4,9 +4,10 @@ import { site } from "@/lib/site";
 const nav = [
   { href: paths.plan, label: "Plan builder", view: "plan" },
   { href: paths.assessment, label: "Readiness check", view: "assessment" },
-  { href: paths.releaseGate, label: "Release gate", view: "release-gate" },
+  { href: paths.tools, label: "Tools", view: "tools" },
+  { href: paths.brief, label: "Sectors", view: "brief" },
   { href: paths.pricing, label: "Pricing", view: "pricing" },
-  { href: paths.brief, label: "By sector & country", view: "brief" },
+  { href: paths.security, label: "Security", view: "security" },
 ] as const;
 
 export function SiteHeader({ current }: { current?: View }) {
@@ -35,9 +36,14 @@ export function SiteHeader({ current }: { current?: View }) {
           <span>{site.name.toUpperCase()}</span>
         </a>
         <div className="masthead-nav-wide">{links}</div>
-        <a className="btn btn-primary masthead-cta" href={paths.plan}>
-          Build my plan
-        </a>
+        <div className="masthead-actions">
+          <a className="masthead-signin" href={paths.login}>
+            Sign in
+          </a>
+          <a className="btn btn-primary masthead-cta" href={paths.plan}>
+            Build my plan
+          </a>
+        </div>
       </div>
       <div className="masthead-nav-narrow">
         <div className="wrap">{links}</div>

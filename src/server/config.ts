@@ -101,7 +101,8 @@ export function config(): Config {
   cached = {
     isProd,
     isTest: nodeEnv === "test" || env.READYLINE_TEST === "1",
-    dataDir: path.resolve(env.DATA_DIR ?? ".data"),
+    // Runtime data location; excluded from build-time file tracing.
+    dataDir: path.resolve(/*turbopackIgnore: true*/ env.DATA_DIR ?? ".data"),
     appUrl,
     appOrigin: origin,
     secureCookies: appUrl.startsWith("https://"),

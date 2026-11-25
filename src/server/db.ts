@@ -13,8 +13,8 @@ const g = globalThis as unknown as { __rlSqlite?: DatabaseSync; __rlStmts?: Map<
 export function database(): DatabaseSync {
   if (g.__rlSqlite) return g.__rlSqlite;
   const dir = config().dataDir;
-  const file = process.env.READYLINE_DB === ":memory:" ? ":memory:" : path.join(dir, "readyline.db");
-  if (file !== ":memory:") fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const file = process.env.READYLINE_DB === ":memory:" ? ":memory:" : path.join(/*turbopackIgnore: true*/ dir, "readyline.db");
+  if (file !== ":memory:") fs.mkdirSync(/*turbopackIgnore: true*/ dir, { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(file, { enableForeignKeyConstraints: true });
   db.exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000; PRAGMA secure_delete = ON;");
   migrate(db);

@@ -17,16 +17,17 @@ const variants = [
 ];
 
 const features: [string, (boolean | string)[]][] = [
-  ["Readiness check, release gate, briefs", [true, true, true, true]],
-  ["Security plan builder (unlimited revisions, export)", [true, true, true, true]],
-  ["Supplier questionnaires and EU funding outline", [true, true, true, true]],
-  ["UK PSTI and radio (EN 18031) checks", [true, true, true, true]],
-  ["Saved plans and release records in the cloud", [false, true, true, true]],
-  ["SBOM watch", [false, true, true, true]],
-  ["Disclosure kit", [false, true, true, true]],
+  ["Readiness check, release gate, SBOM check, incident clock, briefs", [true, true, true, true]],
+  ["Security plan builder with security.txt, disclosure policy and runbook templates", [true, true, true, true]],
+  ["Supplier questionnaires, EU funding outline, UK PSTI and radio checks", [true, true, true, true]],
+  ["Plans saved for your team, with server-signed revisions", [false, true, true, true]],
+  ["Release records kept per product", [false, true, true, true]],
+  ["SBOM watch: hourly vulnerability checks and alerts", [false, true, true, true]],
+  ["Incident clock with a shared timeline and report drafts", [false, true, true, true]],
+  ["Signed evidence export for auditors", [false, true, true, true]],
   ["Products covered", ["In browser", "1", "Up to 5", "Up to 5"]],
-  ["Reporting playbook", [false, false, true, true]],
-  ["Sign-off roles, GitHub and Jira", [false, false, true, true]],
+  ["People", ["You", "3", "25", "25"]],
+  ["Approver and admin roles", [false, false, true, true]],
   ["Threat-model workshop with an expert", [false, false, false, true]],
   ["Documentation review and CE plan", [false, false, false, true]],
 ];
@@ -40,6 +41,8 @@ const comparison = [
 
 
 const JOIN_TAB = 4;
+// The hosted app offers a self-serve trial; the static demo collects interest instead.
+const trialHref = process.env.NEXT_PUBLIC_ROUTING === "hash" ? null : "/signup/";
 
 export function Pricing() {
   const [tab, setTab] = useState(0);
@@ -123,14 +126,26 @@ export function Pricing() {
                           </a>
                         </td>
                         <td className="is-recommended-cell">
-                          <button type="button" className="btn btn-primary btn-small" onClick={() => choose("Starter")}>
-                            Join
-                          </button>
+                          {trialHref ? (
+                            <a className="btn btn-primary btn-small" href={trialHref}>
+                              Try 14 days
+                            </a>
+                          ) : (
+                            <button type="button" className="btn btn-primary btn-small" onClick={() => choose("Starter")}>
+                              Join
+                            </button>
+                          )}
                         </td>
                         <td>
-                          <button type="button" className="btn btn-small" onClick={() => choose("Team")}>
-                            Join
-                          </button>
+                          {trialHref ? (
+                            <a className="btn btn-small" href={trialHref}>
+                              Try 14 days
+                            </a>
+                          ) : (
+                            <button type="button" className="btn btn-small" onClick={() => choose("Team")}>
+                              Join
+                            </button>
+                          )}
                         </td>
                         <td>
                           <button type="button" className="btn btn-small" onClick={() => choose("Guided")}>
@@ -141,7 +156,7 @@ export function Pricing() {
                     </tfoot>
                   </table>
                 </div>
-                <p className="muted">Starter is recommended for one product. Prices exclude VAT. Cancel any time.</p>
+                <p className="muted">Starter is recommended for one product. Every team starts with a 14-day free trial; after it, reading and exporting always stay available. Prices exclude VAT.</p>
               </>
             ),
           },

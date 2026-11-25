@@ -98,11 +98,18 @@ describe("SBOM watch", () => {
     expect(mail?.text).toContain("fixed in 4.17.21");
   });
 
-  it("offers a stateless public check", async () => {
+  it("offers a stateless lookup that receives only package identifiers", async () => {
     const anon = new TestClient(undefined, "192.0.2.171");
-    const res = await anon.post<{ findings: { vulnId: string }[]; quality: { score: number }; sbom: { components: number } }>("/tools/sbom-check", { text: sbomText });
+    const components = [
+      { name: "lodash", version: "4.17.20", purl: "pkg:npm/lodash@4.17.20" },
+      { name: "left-pad", version: "1.3.0", purl: "pkg:npm/left-pad@1.3.0" },
+    ];
+    const res = await anon.post<{ findings: { vulnId: string }[]; queried: number }>("/tools/osv-lookup", { components });
     expect(res.status).toBe(200);
-    expect(res.data.sbom.components).toBe(2);
+    expect(res.data.queried).toBe(2);
     expect(res.data.findings.map((f) => f.vulnId)).toEqual(["GHSA-35jh"]);
+    const tooMany = await anon.post("/tools/osv-lookup", { components: Array.from({ length: 5001 }, () => components[0]) });
+    expect(tooMany.status).toBe(400);
+    expect(tooMany.data.error).toMatch(/at most 5000/);
   });
 });

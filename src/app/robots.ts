@@ -4,5 +4,6 @@ import { site } from "@/lib/site";
 export const dynamic = "force-static";
 
 export default function robots(): MetadataRoute.Robots {
-  return { rules: [{ userAgent: "*", allow: "/" }], sitemap: `${site.url}/sitemap.xml` };
+  // Signed-in pages and the API are never useful in search results.
+  return { rules: [{ userAgent: "*", allow: "/", disallow: ["/app/", "/admin/", "/api/", "/verify/", "/reset/", "/invite/"] }], sitemap: `${site.url}/sitemap.xml` };
 }

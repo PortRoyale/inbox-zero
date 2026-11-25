@@ -179,8 +179,16 @@ export const productRoutes = [
     },
   ),
   route(
-    { method: "POST", path: "/tools/sbom-check", access: "public", maxBytes: 6 * 1024 * 1024, body: v.object({ text: v.string({ min: 2, max: 5 * 1024 * 1024, trim: false }) }) },
-    ({ body, ip }) => sbom.checkOnce(body.text, ip),
+    {
+      method: "POST",
+      path: "/tools/osv-lookup",
+      access: "public",
+      maxBytes: 2 * 1024 * 1024,
+      body: v.object({
+        components: v.array(v.object({ name: v.string({ max: 300 }), version: v.string({ max: 120 }), purl: v.optional(v.string({ max: 600 })) }), { max: 5000 }),
+      }),
+    },
+    ({ body, ip }) => sbom.lookupOnce(body.components.map((c) => ({ ...c, licenses: [], hashes: 0 })), ip),
   ),
   route({ method: "POST", path: "/cron/sbom-watch", access: "cron" }, () => sbom.watchAll()),
 

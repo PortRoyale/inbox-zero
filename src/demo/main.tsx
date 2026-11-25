@@ -8,9 +8,11 @@ import { PlanBuilder } from "@/components/plan/PlanBuilder";
 import { BriefExplorer } from "@/components/seo/BriefExplorer";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { ToolsHub, TrustCentre } from "@/components/InfoPages";
+import { IncidentClockTool, SbomCheck } from "@/components/tools/Tools";
 import type { View } from "@/lib/paths";
 
-const VIEWS: View[] = ["assessment", "release-gate", "plan", "brief", "pricing"];
+const VIEWS: View[] = ["assessment", "release-gate", "plan", "brief", "pricing", "tools", "sbom-check", "incident-clock", "security"];
 
 function viewFromHash(): View {
   const hash = location.hash.slice(1);
@@ -44,6 +46,10 @@ function App() {
         {view === "plan" && <PlanBuilder />}
         {view === "brief" && <BriefExplorer />}
         {view === "pricing" && <Pricing />}
+        {view === "tools" && <ToolsHub />}
+        {view === "sbom-check" && <SbomCheck />}
+        {view === "incident-clock" && <IncidentClockTool />}
+        {view === "security" && <TrustCentre />}
         {view === "home" && <Home />}
       </main>
       <SiteFooter />

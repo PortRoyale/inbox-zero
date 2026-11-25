@@ -55,11 +55,11 @@ function fromEnv(): Stored | null {
 
 function devKeys(): Stored {
   const dir = config().dataDir;
-  const file = path.join(dir, "dev-keys.json");
-  if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8")) as Stored;
-  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const file = path.join(/*turbopackIgnore: true*/ dir, "dev-keys.json");
+  if (fs.existsSync(/*turbopackIgnore: true*/ file)) return JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ file, "utf8")) as Stored;
+  fs.mkdirSync(/*turbopackIgnore: true*/ dir, { recursive: true, mode: 0o700 });
   const stored = generateStoredKeys();
-  fs.writeFileSync(file, JSON.stringify(stored), { mode: 0o600 });
+  fs.writeFileSync(/*turbopackIgnore: true*/ file, JSON.stringify(stored), { mode: 0o600 });
   return stored;
 }
 

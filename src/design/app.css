@@ -643,3 +643,24 @@
 .auth-links {
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
+
+/* Public masthead: sign-in link beside the primary action. */
+.masthead-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+}
+
+.masthead-signin {
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink-2) !important;
+}
+
+.masthead-signin:hover {
+  color: var(--ink) !important;
+  text-decoration: underline;
+}

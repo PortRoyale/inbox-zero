@@ -36,16 +36,14 @@ function parseOrThrow(text: string) {
   }
 }
 
-/** Public tool: parse, score and check an SBOM without storing anything. */
-export async function checkOnce(text: string, ip: string | null) {
+/** Public tool: the browser parses and scores the SBOM; only package identifiers come here for the
+ *  vulnerability lookup. Nothing is stored. */
+export async function lookupOnce(components: SbomComponent[], ip: string | null) {
   if (!rateLimit(`sbom-tool:ip:${ip ?? "none"}`, 10, 3600).allowed) throw tooMany(3600);
-  const parsed = parseOrThrow(text);
-  const quality = sbomQuality(parsed);
   try {
-    const result = await checkWithOsv(parsed.components, { baseUrl: config().osvUrl, maxDetails: 300 });
-    return { sbom: { format: parsed.format, specVersion: parsed.specVersion, subject: parsed.subject, components: parsed.components.length }, quality, ...result, error: null };
+    return { ...(await checkWithOsv(components, { baseUrl: config().osvUrl, maxDetails: 300 })), error: null as string | null };
   } catch (e) {
-    return { sbom: { format: parsed.format, specVersion: parsed.specVersion, subject: parsed.subject, components: parsed.components.length }, quality, findings: [], queried: 0, skipped: 0, error: (e as Error).message };
+    return { findings: [], queried: 0, skipped: 0, error: (e as Error).message };
   }
 }
 

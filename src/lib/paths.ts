@@ -9,6 +9,12 @@ export const paths = hashRouting
       brief: "#brief",
       pricing: "#pricing",
       guides: "#brief",
+      tools: "#tools",
+      sbomCheck: "#sbom-check",
+      incidentClock: "#incident-clock",
+      verify: "#tools",
+      security: "#security",
+      login: "#pricing",
     }
   : {
       home: "/",
@@ -18,6 +24,12 @@ export const paths = hashRouting
       brief: "/cra/",
       pricing: "/pricing/",
       guides: "/guides/",
+      tools: "/tools/",
+      sbomCheck: "/tools/sbom-check/",
+      incidentClock: "/tools/incident-clock/",
+      verify: "/verify-signature/",
+      security: "/security/",
+      login: "/login/",
     };
 
-export type View = "home" | "assessment" | "release-gate" | "plan" | "brief" | "pricing";
+export type View = "home" | "assessment" | "release-gate" | "plan" | "brief" | "pricing" | "tools" | "sbom-check" | "incident-clock" | "security";
