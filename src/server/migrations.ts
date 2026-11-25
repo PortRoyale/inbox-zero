@@ -173,4 +173,38 @@ CREATE TABLE rate_limits (
 ) STRICT;
 `,
   },
+  {
+    version: 2,
+    sql: `
+-- Vulnerability findings per SBOM check, with a triage status the team controls.
+CREATE TABLE sbom_findings (
+  id TEXT PRIMARY KEY,
+  product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  sbom_id TEXT NOT NULL REFERENCES sboms(id) ON DELETE CASCADE,
+  vuln_id TEXT NOT NULL,
+  component_key TEXT NOT NULL,
+  severity TEXT NOT NULL CHECK (severity IN ('critical', 'high', 'medium', 'low', 'none', 'unknown')),
+  score REAL,
+  data_sealed TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'investigating', 'not-affected', 'fixed', 'accepted')),
+  note_sealed TEXT,
+  first_seen_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE (sbom_id, vuln_id, component_key)
+) STRICT;
+CREATE INDEX sbom_findings_product ON sbom_findings(product_id, severity);
+
+-- Signed evidence exports, so a recipient can verify a bundle later.
+CREATE TABLE exports (
+  id TEXT PRIMARY KEY,
+  product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  digest TEXT NOT NULL,
+  manifest_json TEXT NOT NULL,
+  signature_json TEXT NOT NULL,
+  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX exports_product ON exports(product_id, created_at);
+`,
+  },
 ];

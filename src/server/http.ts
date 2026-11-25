@@ -7,7 +7,7 @@ import { ValidationError, type V } from "@/server/validate";
 // One request pipeline for every API call: method and path matching, origin (CSRF) checks,
 // JSON-only bodies with a byte cap, session lookup, validation, and uniform error mapping.
 
-export type Method = "GET" | "POST" | "PATCH" | "DELETE";
+export type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export type Access = "public" | "user" | "verified" | "superadmin" | "cron";
 
 export type Ctx<B> = {

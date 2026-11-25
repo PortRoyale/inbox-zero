@@ -37,7 +37,7 @@ export function planToMarkdown(plan: Plan, a: PlanAnalysis, fingerprint: string,
     [
       ["Manufacturer", v(p.manufacturer, "manufacturer legal name")],
       ["Current revision", latest ? `${latest.rev} (${latest.date})${changedSinceIssue ? ", edited since issue" : ""}` : "Draft, not yet issued"],
-      ["Content fingerprint (SHA-256)", `\`${fingerprint}\``],
+      ["Content fingerprint (SHA-512)", `\`${fingerprint}\``],
       ["Generated", generatedOn],
       ["Plan completeness", `${a.completeness}% (${a.checksPassed}/${a.checksTotal} checks passed)`],
       ["Audit-ready", a.auditReady ? "Yes" : `No: ${a.blockers.length} blocking, ${a.gaps.length} gap(s) open`],

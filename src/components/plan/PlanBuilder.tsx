@@ -1163,7 +1163,7 @@ function ReviewStep({
           </p>
         )}
         <p className="muted">
-          Issuing a revision records the date, approver and a SHA-256 fingerprint of the plan's content. Any later edit changes the
+          Issuing a revision records the date, approver and a SHA-512 fingerprint of the plan's content. Any later edit changes the
           fingerprint, so an auditor can tell whether the document matches what was approved.
         </p>
         <div className="form-grid">

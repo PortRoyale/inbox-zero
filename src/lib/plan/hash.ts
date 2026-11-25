@@ -11,10 +11,16 @@ export function canonicalJson(value: unknown): string {
   return JSON.stringify(value);
 }
 
-export async function fingerprintPlan(plan: Plan) {
+// The fingerprint covers the plan's content (not its revision history), as SHA-512 over canonical JSON.
+// The server computes the same digest when it signs a revision, so both sides agree byte for byte.
+export function planContent(plan: Plan) {
   const { revisions: _revisions, ...content } = plan;
-  const bytes = new TextEncoder().encode(canonicalJson(content));
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return content;
+}
+
+export async function fingerprintPlan(plan: Plan) {
+  const bytes = new TextEncoder().encode(canonicalJson(planContent(plan)));
+  const digest = await crypto.subtle.digest("SHA-512", bytes);
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
