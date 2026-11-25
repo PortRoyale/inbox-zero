@@ -16,6 +16,7 @@ export type Config = {
   mailFrom: string;
   superadmins: string[];
   ipSalt: string;
+  trustProxyHops: number;
 };
 
 let cached: Config | undefined;
@@ -55,6 +56,9 @@ export function config(): Config {
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean),
     ipSalt: ipSalt || "development-only-ip-salt",
+    // Number of reverse proxies in front of the app (Caddy in the supplied deployment). Used to pick
+    // the client address from X-Forwarded-For; 0 ignores the header entirely.
+    trustProxyHops: Math.min(5, Math.max(0, Number(env.TRUST_PROXY_HOPS ?? (isProd ? 1 : 0)) || 0)),
   };
   return cached;
 }

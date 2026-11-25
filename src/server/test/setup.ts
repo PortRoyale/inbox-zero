@@ -8,3 +8,4 @@ process.env.DATA_DIR = dir;
 process.env.READYLINE_DB = ":memory:";
 process.env.READYLINE_TEST = "1";
 process.env.APP_URL = "http://localhost:3000";
+process.env.TRUST_PROXY_HOPS = "1";
