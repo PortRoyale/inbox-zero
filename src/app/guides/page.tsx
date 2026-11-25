@@ -15,9 +15,10 @@ export default function GuidesIndex() {
     <>
       <SiteHeader />
       <main>
-        <div className="wrap stack">
+        <div className="wrap stack" data-tool="briefs">
           <PageHero
             id="guides-title"
+            tool="briefs"
             motif="document"
             seed={5}
             label="Guides"

@@ -138,9 +138,10 @@ export function PlanBuilder() {
   const stepChecks = analysis.checks.filter((c) => c.step === current.id && !c.passed);
 
   return (
-    <div className="wrap stack">
+    <div className="wrap stack" data-tool="plan">
       <PageHero
         id="plan-title"
+        tool="plan"
         motif="document"
         seed={11}
         label="Plan builder"

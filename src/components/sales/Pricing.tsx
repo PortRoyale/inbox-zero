@@ -50,9 +50,10 @@ export function Pricing() {
     requestAnimationFrame(() => document.getElementById("pricing-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
   return (
-    <div className="wrap stack">
+    <div className="wrap stack" data-tool="plan">
       <PageHero
         id="pricing-title"
+        tool="plan"
         motif="gauge"
         seed={41}
         label="Pricing"

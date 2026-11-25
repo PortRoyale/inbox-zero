@@ -10,6 +10,7 @@ export function GuideView({ guide, related, crumbs }: { guide: Guide; related: G
     <>
       <PageHero
         id="guide-title"
+        tool="briefs"
         motif="document"
         seed={guide.slug.length * 13}
         label="Guide"

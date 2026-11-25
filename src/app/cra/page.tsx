@@ -19,7 +19,7 @@ export default function CraHub() {
       <SiteHeader current="brief" />
       <main>
         <BriefExplorer />
-        <div className="wrap stack stack-tight">
+        <div className="wrap stack stack-tight" data-tool="briefs">
           <SheetTabs
             label="Browse all briefs"
             items={[

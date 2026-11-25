@@ -123,9 +123,10 @@ export function ReleaseGate() {
   const groupState = (qs: readonly { id: QuestionId }[]) => (qs.every((q) => answers[q.id]) ? ("done" as const) : ("open" as const));
 
   return (
-    <div className="wrap stack">
+    <div className="wrap stack" data-tool="gate">
       <PageHero
         id="gate-title"
+        tool="gate"
         motif="chip"
         seed={23}
         label="Free tool"

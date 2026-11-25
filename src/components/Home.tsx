@@ -13,16 +13,34 @@ const tools = [
     href: paths.plan,
     cta: "Build my plan",
     featured: true,
+    tool: "plan",
   },
-  { name: "Readiness check", body: `${requirements.length} requirements, filtered to your product, scored in about ten minutes.`, href: paths.assessment, cta: "Check readiness" },
-  { name: "Release gate", body: "Decide each release's security testing from what changed, and keep the record.", href: paths.releaseGate, cta: "Gate a release" },
-  { name: "Sector & country briefs", body: "Your product class, deadlines and where to report, for 14 sectors and 39 countries.", href: paths.brief, cta: "Get my brief" },
+  { name: "Readiness check", body: `${requirements.length} requirements, filtered to your product, scored in about ten minutes.`, href: paths.assessment, cta: "Check readiness", tool: "readiness" },
+  { name: "Release gate", body: "Decide each release's security testing from what changed, and keep the record.", href: paths.releaseGate, cta: "Gate a release", tool: "gate" },
+  { name: "Sector & country briefs", body: "Your product class, deadlines and where to report, for 14 sectors and 39 countries.", href: paths.brief, cta: "Get my brief", tool: "briefs" },
 ];
 
 const appliesTo = [
   { title: "Connected devices", body: "Anything with a radio or a port: smart home, wearables, controllers, point-of-sale." },
   { title: "Firmware", body: "Code you ship on your own or a partner's hardware." },
   { title: "Software", body: "Installable and mobile software sold in the EU, plus the backend it needs." },
+];
+
+const stats = [
+  { figure: "€15M", label: "maximum fine, or 2.5% of worldwide turnover", color: "var(--brand-red)" },
+  { figure: "24 h", label: "to send an early warning for an exploited vulnerability", color: "var(--brand-yellow)" },
+  { figure: "31", label: "essential requirements mapped, with evidence", color: "var(--brand-blue)" },
+  { figure: "50%", label: "EU co-funding for eligible SMEs, up to €30,000", color: "var(--brand-green)" },
+];
+
+const standards = [
+  { name: "Regulation (EU) 2024/2847", color: "var(--brand-blue)" },
+  { name: "ENISA Single Reporting Platform", color: "var(--brand-red)" },
+  { name: "EN 18031", color: "var(--brand-yellow)" },
+  { name: "ETSI EN 303 645", color: "var(--brand-green)" },
+  { name: "IEC 62443-4-1", color: "var(--brand-blue)" },
+  { name: "EN 40000-1-2", color: "var(--brand-red)" },
+  { name: "UK PSTI", color: "var(--brand-yellow)" },
 ];
 
 const outOfScope = ["Medical devices", "Vehicles, aviation, marine", "Pure SaaS (NIS2 instead)", "Non-commercial open source"];
@@ -53,6 +71,7 @@ export function Home() {
           </>
         }
         backdrop={false}
+        variant="blueprint"
         crosshair
         wideAside
         aside={<ExplodedView />}
@@ -76,6 +95,15 @@ export function Home() {
         <Timeline />
       </PageHero>
 
+      <section aria-label="Key figures" className="stats-band">
+        {stats.map((st) => (
+          <div key={st.label} className="stat" style={{ ["--stat" as string]: st.color }}>
+            <span className="stat-figure">{st.figure}</span>
+            <span className="stat-label">{st.label}</span>
+          </div>
+        ))}
+      </section>
+
       <section className="sheet" aria-labelledby="tools-title">
         <div className="section-head">
           <Fcf keyCell="Sheet 2/3" cells={["Free tools"]} />
@@ -83,7 +111,7 @@ export function Home() {
         </div>
         <ul className="tool-cards">
           {tools.map((t, i) => (
-            <li key={t.name} className={t.featured ? "is-featured" : undefined}>
+            <li key={t.name} className={t.featured ? "is-featured" : undefined} data-tool={t.tool}>
               <div className="card-head">
                 <Balloon>{i + 1}</Balloon>
                 <h3>{t.name}</h3>
@@ -119,6 +147,14 @@ export function Home() {
               ))}
             </ul>
           </div>
+        </div>
+        <div className="standards-strip" aria-label="Standards the tools map to">
+          <span className="label">Maps to</span>
+          {standards.map((st) => (
+            <span key={st.name} className="std-chip" style={{ ["--chip" as string]: st.color }}>
+              {st.name}
+            </span>
+          ))}
         </div>
         <div className="cta-band">
           <p>

@@ -20,12 +20,29 @@
   --ink-2: #444e53;
   --ink-3: #5f6a6f;
   --rule: #c3cac9;
-  --redline: #c21f16;
+  --redline: #c4271c;
   --redline-wash: #fbe9e6;
-  --highlight: #f6e34a;
+  --highlight: #fcc419;
   --highlight-ink: #13191c;
   --nonphoto: #17708a;
   --on-ink: #fbfbf8;
+  --brand-blue: #1a56db;
+  --brand-blue-soft: #e7efff;
+  --brand-red: #c4271c;
+  --brand-red-soft: #fdeeec;
+  --brand-yellow: #fcc419;
+  --brand-yellow-soft: #fff4cc;
+  --brand-green: #18794e;
+  --hero-bg: #0b2a6b;
+  --hero-bg-2: #0e3487;
+  --hero-ink: #f4f7ff;
+  --hero-muted: #bcd0f7;
+  --hero-line: rgba(140, 180, 255, 0.16);
+  --hero-red: #ff7a6e;
+  --on-brand: #ffffff;
+  --footer-bg: #0d1420;
+  --footer-ink: #e6ecf5;
+  --footer-muted: #9fb0c6;
   color-scheme: light;
 
   /* B612 (cockpit display face) for headings only: its parentheses read as brackets, which breaks legal citations. */
@@ -75,10 +92,21 @@
     --rule: #2e3a3f;
     --redline: #ff6a5c;
     --redline-wash: #3a1714;
-    --highlight: #ead94b;
+    --highlight: #fcc419;
     --highlight-ink: #13191c;
     --nonphoto: #5cc3dc;
     --on-ink: #11171a;
+    --brand-blue: #6ea2ff;
+    --brand-blue-soft: #17264a;
+    --brand-red: #ff6b5e;
+    --brand-red-soft: #3a1714;
+    --brand-yellow: #fcc419;
+    --brand-yellow-soft: #3a3010;
+    --brand-green: #4cc38a;
+    --hero-bg: #081d4d;
+    --hero-bg-2: #0b2766;
+    --on-brand: #0b1220;
+    --footer-bg: #070b12;
     color-scheme: dark;
   }
 }
@@ -93,10 +121,21 @@
   --rule: #2e3a3f;
   --redline: #ff6a5c;
   --redline-wash: #3a1714;
-  --highlight: #ead94b;
+  --highlight: #fcc419;
   --highlight-ink: #13191c;
   --nonphoto: #5cc3dc;
   --on-ink: #11171a;
+  --brand-blue: #6ea2ff;
+  --brand-blue-soft: #17264a;
+  --brand-red: #ff6b5e;
+  --brand-red-soft: #3a1714;
+  --brand-yellow: #fcc419;
+  --brand-yellow-soft: #3a3010;
+  --brand-green: #4cc38a;
+  --hero-bg: #081d4d;
+  --hero-bg-2: #0b2766;
+  --on-brand: #0b1220;
+  --footer-bg: #070b12;
   color-scheme: dark;
 }
 

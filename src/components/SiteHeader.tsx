@@ -24,9 +24,12 @@ export function SiteHeader({ current }: { current?: View }) {
       <div className="wrap">
         <a className="wordmark" href={paths.home} aria-label={`${site.name} home`}>
           <span aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 18 18">
-              <circle cx="9" cy="9" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-              <path d="M9 0v18M0 9h18" stroke="currentColor" strokeWidth="1.6" />
+            <svg width="20" height="20" viewBox="0 0 20 20" className="logo-mark">
+              <path d="M10 2.6 A7.4 7.4 0 0 1 17.4 10" className="mark-q1" fill="none" strokeWidth="2.6" />
+              <path d="M17.4 10 A7.4 7.4 0 0 1 10 17.4" className="mark-q2" fill="none" strokeWidth="2.6" />
+              <path d="M10 17.4 A7.4 7.4 0 0 1 2.6 10" className="mark-q3" fill="none" strokeWidth="2.6" />
+              <path d="M2.6 10 A7.4 7.4 0 0 1 10 2.6" className="mark-q4" fill="none" strokeWidth="2.6" />
+              <path d="M10 0v20M0 10h20" stroke="currentColor" strokeWidth="1.4" />
             </svg>
           </span>
           <span>{site.name.toUpperCase()}</span>

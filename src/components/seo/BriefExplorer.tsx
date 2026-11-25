@@ -16,9 +16,10 @@ export function BriefExplorer({ initialIndustry = "smart-home-security", initial
   const exporters = countries.filter((c) => !c.inEU);
 
   return (
-    <div className="wrap stack">
+    <div className="wrap stack" data-tool="briefs">
       <PageHero
         id="explorer-title"
+        tool="briefs"
         motif="globe"
         seed={29}
         label="Brief generator"

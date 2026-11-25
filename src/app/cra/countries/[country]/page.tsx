@@ -36,7 +36,7 @@ export default async function CountryPage({ params }: { params: Promise<Params> 
     <>
       <SiteHeader current="brief" />
       <main>
-        <div className="wrap stack">
+        <div className="wrap stack" data-tool="briefs">
           <BriefView
             brief={brief}
             crumbs={crumbs}

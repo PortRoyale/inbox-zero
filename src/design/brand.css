@@ -1,0 +1,550 @@
+/* Brand layer: red, yellow, blue (and green for knowledge) on top of Checkprint. */
+
+/* Tool colour coding, applied with data-tool on any container */
+[data-tool] {
+  --tool: var(--brand-blue);
+  --tool-soft: var(--brand-blue-soft);
+  --tool-on: var(--on-brand);
+}
+
+[data-tool="readiness"] {
+  --tool: var(--brand-yellow);
+  --tool-soft: var(--brand-yellow-soft);
+  --tool-on: #13191c;
+}
+
+[data-tool="gate"] {
+  --tool: var(--brand-red);
+  --tool-soft: var(--brand-red-soft);
+  --tool-on: var(--on-brand);
+}
+
+[data-tool="briefs"] {
+  --tool: var(--brand-green);
+  --tool-soft: color-mix(in srgb, var(--brand-green) 12%, var(--paper));
+  --tool-on: var(--on-brand);
+}
+
+/* Tri-colour stripe across the top of every page */
+.masthead::before {
+  content: "";
+  display: block;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--brand-blue) 0 25%,
+    var(--brand-red) 25% 50%,
+    var(--brand-yellow) 50% 75%,
+    var(--brand-green) 75% 100%
+  );
+}
+
+.wordmark {
+  border-color: var(--ink);
+}
+
+.mark-q1 {
+  stroke: var(--brand-blue);
+}
+.mark-q2 {
+  stroke: var(--brand-red);
+}
+.mark-q3 {
+  stroke: var(--brand-yellow);
+}
+.mark-q4 {
+  stroke: var(--brand-green);
+}
+
+/* Primary actions in brand blue */
+.btn-primary {
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+  color: var(--on-brand);
+}
+
+.btn-primary:not(:disabled):hover {
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+a:not(.btn):not(.wordmark):hover {
+  color: var(--brand-blue);
+}
+
+.masthead nav a[aria-current="page"] {
+  text-decoration-color: var(--brand-blue);
+}
+
+.step-btn[aria-selected="true"],
+.step-btn[aria-current="step"] {
+  border-color: var(--tool, var(--brand-blue));
+  box-shadow: inset 4px 0 0 var(--tool, var(--brand-blue));
+  background: var(--tool-soft, var(--brand-blue-soft));
+}
+
+/* Tool-tinted page heroes */
+.page-hero[data-tool] {
+  border-top: 8px solid var(--tool);
+}
+
+.page-hero[data-tool] .fcf > .fcf-key {
+  background: var(--tool);
+  border-color: var(--tool);
+  color: var(--tool-on);
+}
+
+/* ---------- Blueprint hero (home) ---------- */
+
+.page-hero.is-blueprint {
+  background-color: var(--hero-bg);
+  background-image:
+    radial-gradient(120% 90% at 85% 10%, var(--hero-bg-2) 0%, transparent 60%),
+    linear-gradient(var(--hero-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hero-line) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    var(--grid-step) var(--grid-step),
+    var(--grid-step) var(--grid-step);
+  border-color: var(--hero-bg);
+  color: var(--hero-ink);
+  box-shadow:
+    6px 6px 0 -1px var(--paper),
+    6px 6px 0 0 var(--ink);
+}
+
+.is-blueprint .page-title {
+  color: var(--hero-ink);
+}
+
+.is-blueprint .lead {
+  color: var(--hero-muted);
+}
+
+.is-blueprint .mark-done {
+  color: #13191c;
+}
+
+.is-blueprint .fcf,
+.is-blueprint .fcf > span {
+  border-color: var(--hero-muted);
+  background: transparent;
+  color: var(--hero-muted);
+}
+
+.is-blueprint .fcf > .fcf-key {
+  background: var(--brand-yellow);
+  border-color: var(--brand-yellow);
+  color: #13191c;
+}
+
+.is-blueprint .btn {
+  background: transparent;
+  border-color: var(--hero-ink);
+  color: var(--hero-ink);
+}
+
+.is-blueprint .btn-primary {
+  background: var(--brand-yellow);
+  border-color: var(--brand-yellow);
+  color: #13191c;
+}
+
+.is-blueprint .btn:not(:disabled):hover {
+  box-shadow: 3px 3px 0 var(--hero-red);
+}
+
+.is-blueprint .fact-strip {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--hero-muted);
+}
+
+.is-blueprint .fact-strip > div {
+  border-color: var(--hero-muted);
+}
+
+.is-blueprint .fact-strip dt {
+  color: var(--hero-muted);
+}
+
+.is-blueprint .fact-strip dd {
+  color: var(--hero-ink);
+}
+
+/* Exploded view in white line work on blueprint */
+.is-blueprint .xv-centre {
+  stroke: var(--hero-muted);
+  opacity: 0.6;
+}
+
+.is-blueprint .xv-top {
+  fill: rgba(255, 255, 255, 0.06);
+  stroke: #dbe6ff;
+}
+
+.is-blueprint .xv-side-l {
+  fill: rgba(255, 255, 255, 0.12);
+  stroke: #dbe6ff;
+}
+
+.is-blueprint .xv-side-r {
+  fill: rgba(255, 255, 255, 0.2);
+  stroke: #dbe6ff;
+}
+
+.is-blueprint .xv-layer.is-hot .xv-top {
+  fill: var(--brand-yellow);
+}
+
+.is-blueprint .xv-screen {
+  fill: rgba(110, 162, 255, 0.45);
+  stroke: #dbe6ff;
+}
+
+.is-blueprint .xv-chip {
+  fill: var(--brand-yellow);
+  stroke: var(--brand-yellow);
+}
+
+.is-blueprint .xv-edge {
+  stroke: #dbe6ff;
+}
+
+.is-blueprint .xv-trace,
+.is-blueprint .xv-link {
+  stroke: #7cc6ff;
+}
+
+.is-blueprint .xv-antenna {
+  stroke: var(--hero-red);
+}
+
+.is-blueprint .xv-port {
+  fill: var(--hero-red);
+}
+
+.is-blueprint .xv-leader {
+  stroke: var(--hero-muted);
+}
+
+.is-blueprint .xv-dot {
+  fill: var(--hero-ink);
+}
+
+.is-blueprint .xv-balloon {
+  fill: var(--hero-bg);
+  stroke: var(--hero-ink);
+}
+
+.is-blueprint .xv-layer.is-hot .xv-balloon {
+  fill: var(--brand-yellow);
+}
+
+.is-blueprint .xv-num {
+  fill: var(--hero-ink);
+}
+
+.is-blueprint .xv-layer.is-hot .xv-num {
+  fill: #13191c;
+}
+
+.is-blueprint .xv-cloud path:first-child {
+  fill: rgba(255, 255, 255, 0.06);
+  stroke: #dbe6ff;
+}
+
+.is-blueprint .xv-cloud text {
+  fill: var(--hero-muted);
+}
+
+.is-blueprint .xv-legend {
+  border-color: var(--hero-muted);
+}
+
+.is-blueprint .xv-legend li {
+  border-color: rgba(188, 208, 247, 0.25);
+}
+
+.is-blueprint .xv-legend strong {
+  color: var(--hero-ink);
+}
+
+.is-blueprint .xv-legend li.is-hot strong {
+  color: #13191c;
+}
+
+.is-blueprint .xv-part {
+  color: var(--hero-muted);
+}
+
+.is-blueprint .xv-legend .balloon {
+  background: transparent;
+  border-color: var(--hero-ink);
+  color: var(--hero-ink);
+}
+
+.xv-legend li:nth-child(1) .balloon {
+  box-shadow: inset 0 -3px 0 var(--brand-blue);
+}
+.xv-legend li:nth-child(2) .balloon {
+  box-shadow: inset 0 -3px 0 var(--brand-red);
+}
+.xv-legend li:nth-child(3) .balloon {
+  box-shadow: inset 0 -3px 0 var(--brand-yellow);
+}
+.xv-legend li:nth-child(4) .balloon {
+  box-shadow: inset 0 -3px 0 var(--brand-green);
+}
+.xv-legend li:nth-child(5) .balloon {
+  box-shadow: inset 0 -3px 0 #7cc6ff;
+}
+
+/* Timeline on blueprint */
+.is-blueprint .timeline {
+  border-color: var(--hero-muted);
+}
+
+.is-blueprint .tl text {
+  fill: var(--hero-ink);
+}
+
+.is-blueprint .tl .tl-year {
+  fill: var(--hero-muted);
+}
+
+.is-blueprint .tl .tl-today {
+  fill: #7cc6ff;
+}
+
+.is-blueprint .tl line[stroke="var(--ink)"],
+.is-blueprint .tl path[fill="var(--ink)"] {
+  stroke: var(--hero-ink);
+}
+
+.is-blueprint .tl {
+  --ink: #e6eeff;
+  --paper: var(--hero-bg);
+  --redline: var(--hero-red);
+  --nonphoto: #7cc6ff;
+}
+
+.is-blueprint .ch-v,
+.is-blueprint .ch-h {
+  background: #7cc6ff;
+}
+
+.is-blueprint .ch-read {
+  background: var(--hero-bg);
+  border-color: #7cc6ff;
+  color: #7cc6ff;
+}
+
+/* ---------- Stats band ---------- */
+
+.stats-band {
+  display: grid;
+  gap: 0;
+  border: var(--lw-wide) solid var(--ink);
+  background: var(--paper);
+  box-shadow:
+    6px 6px 0 -1px var(--paper),
+    6px 6px 0 0 var(--ink);
+}
+
+@media (min-width: 48rem) {
+  .stats-band {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-6) var(--s-5);
+  border-top: 8px solid var(--stat, var(--brand-blue));
+  border-right: var(--lw-thin) solid var(--ink);
+  min-width: 0;
+}
+
+.stat:last-child {
+  border-right: 0;
+}
+
+.stat-figure {
+  font-family: var(--font-display);
+  font-size: clamp(var(--t-6), 4.4vw, var(--t-7));
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.stat-label {
+  color: var(--ink-2);
+  font-size: var(--t-2);
+}
+
+/* ---------- Standards strip ---------- */
+
+.standards-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-4);
+  padding: var(--s-5);
+  border: var(--lw-thin) solid var(--ink);
+  background: var(--paper);
+}
+
+.standards-strip .label {
+  margin-right: var(--s-3);
+}
+
+.std-chip {
+  padding: var(--s-2) var(--s-4);
+  border: var(--lw-thin) solid var(--ink);
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  letter-spacing: 0.04em;
+  background: var(--paper);
+  border-left: 5px solid var(--chip, var(--brand-blue));
+}
+
+/* ---------- Tool cards with colour bars ---------- */
+
+.tool-cards li {
+  border-top: 8px solid var(--tool) !important;
+}
+
+.tool-cards li.is-featured {
+  background: var(--tool-soft);
+}
+
+.tool-cards li .balloon {
+  background: var(--tool);
+  border-color: var(--tool);
+  color: var(--tool-on);
+  font-weight: 700;
+}
+
+.tool-cards li .btn {
+  border-color: var(--tool);
+}
+
+.tool-cards li .btn:not(.btn-primary) {
+  color: var(--ink);
+}
+
+/* ---------- Dark footer ---------- */
+
+.site-foot {
+  background: var(--footer-bg);
+  padding-block: var(--s-8);
+  margin-top: var(--s-7);
+  border-top: 6px solid transparent;
+  border-image: linear-gradient(
+      90deg,
+      var(--brand-blue) 0 25%,
+      var(--brand-red) 25% 50%,
+      var(--brand-yellow) 50% 75%,
+      var(--brand-green) 75% 100%
+    )
+    1;
+}
+
+.site-foot .tblock {
+  background: transparent;
+  border-color: var(--footer-muted);
+}
+
+.site-foot .tblock > div {
+  border-color: rgba(159, 176, 198, 0.35) !important;
+}
+
+.site-foot dt {
+  color: var(--footer-muted);
+}
+
+.site-foot dd,
+.site-foot a {
+  color: var(--footer-ink);
+}
+
+.site-foot .foot-note dd {
+  color: var(--footer-muted);
+}
+
+/* ---------- Colour in data ---------- */
+
+.band-good {
+  color: var(--brand-blue);
+}
+
+.band-ok {
+  color: #8a6a00;
+}
+
+.outcome-pass .outcome-tag {
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+  color: var(--on-brand);
+}
+
+.variants thead th.is-recommended {
+  background: var(--brand-blue);
+  color: var(--on-brand);
+}
+
+.variants td.is-recommended-cell {
+  background: var(--brand-blue-soft);
+}
+
+.brief-steps .when:not(.is-now) {
+  color: var(--brand-blue);
+}
+
+.cta-band {
+  background: var(--brand-blue-soft);
+  border-color: var(--brand-blue);
+}
+
+.grant-card,
+.grant-banner {
+  background: var(--brand-yellow-soft);
+  border-color: var(--brand-yellow);
+}
+
+.brief-cta {
+  background: var(--hero-bg);
+}
+
+.brief-cta .btn {
+  background: var(--brand-yellow);
+  border-color: var(--brand-yellow);
+  color: #13191c;
+}
+
+/* Plain zeros in running text: the body face's default slashed zero reads as a strikethrough in prices. */
+body {
+  font-feature-settings: "ss01";
+}
+
+.tool-cards li .btn:not(.btn-primary) {
+  border-color: var(--ink);
+  box-shadow: inset 0 -4px 0 var(--tool);
+}
+
+.tool-cards li .btn:not(.btn-primary):not(:disabled):hover {
+  box-shadow:
+    inset 0 -4px 0 var(--tool),
+    3px 3px 0 var(--ink);
+}
+
+.toggle.is-on {
+  background: var(--tool-soft, var(--brand-blue-soft));
+  border-color: var(--tool, var(--brand-blue));
+  box-shadow: inset 4px 0 0 var(--tool, var(--brand-blue));
+}
+
+.type-option.is-checked {
+  background: var(--tool-soft, var(--brand-blue-soft));
+}

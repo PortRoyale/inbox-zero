@@ -200,6 +200,7 @@ export function BriefView({
       {!embedded && (
         <PageHero
           id="brief-title"
+          tool="briefs"
           motif={country && !industry ? "globe" : "device"}
           seed={seedFrom(`${industry?.slug ?? ""}${country?.slug ?? ""}`)}
           label="Compliance brief"

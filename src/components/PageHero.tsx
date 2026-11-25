@@ -19,6 +19,8 @@ export function PageHero({
   crosshair = false,
   extra,
   wideAside = false,
+  tool,
+  variant,
 }: {
   id: string;
   motif: Motif;
@@ -36,10 +38,12 @@ export function PageHero({
   crosshair?: boolean;
   extra?: React.ReactNode;
   wideAside?: boolean;
+  tool?: "plan" | "readiness" | "gate" | "briefs";
+  variant?: "blueprint";
 }) {
   const H = level === 1 ? "h1" : "h2";
   return (
-    <section className="sheet page-hero" aria-labelledby={id}>
+    <section className={`sheet page-hero${variant ? ` is-${variant}` : ""}`} data-tool={tool} aria-labelledby={id}>
       {crosshair && <HeroCrosshair />}
       <div className={`page-hero-grid${wideAside ? " is-wide-aside" : ""}`}>
         {backdrop && <DrawingBackdrop motif={motif} seed={seed} />}

@@ -152,9 +152,10 @@ export function Assessment() {
   ];
 
   return (
-    <div className="wrap stack">
+    <div className="wrap stack" data-tool="readiness">
       <PageHero
         id="assess-title"
+        tool="readiness"
         motif="gauge"
         seed={17}
         label="Free tool"

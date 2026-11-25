@@ -40,7 +40,7 @@ export default async function GuidePage({ params }: { params: Promise<Params> })
     <>
       <SiteHeader />
       <main>
-        <div className="wrap stack">
+        <div className="wrap stack" data-tool="briefs">
           <GuideView guide={guide} related={related} crumbs={crumbs} />
         </div>
         <JsonLd data={breadcrumbs(crumbs)} />

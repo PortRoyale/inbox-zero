@@ -44,7 +44,7 @@ export default async function ComboPage({ params }: { params: Promise<Params> })
     <>
       <SiteHeader current="brief" />
       <main>
-        <div className="wrap stack">
+        <div className="wrap stack" data-tool="briefs">
           <BriefView brief={buildBrief(industry, country)} crumbs={crumbs} />
         </div>
         <JsonLd data={breadcrumbs(crumbs)} />
