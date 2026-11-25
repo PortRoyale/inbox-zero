@@ -73,6 +73,12 @@
   color: var(--ink-3);
 }
 
+/* In the dark header row the number column keeps the header's own text colour (AA contrast). */
+.spec thead .spec-no {
+  color: inherit;
+  opacity: 0.8;
+}
+
 .spec tr.spec-group > th {
   background: var(--tool-soft, var(--brand-blue-soft));
   border-top: var(--lw-thin) solid var(--ink);
