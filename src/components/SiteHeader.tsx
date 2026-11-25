@@ -2,10 +2,11 @@ import { paths, type View } from "@/lib/paths";
 import { site } from "@/lib/site";
 
 const nav = [
+  { href: paths.plan, label: "Plan builder", view: "plan" },
   { href: paths.assessment, label: "Readiness check", view: "assessment" },
   { href: paths.releaseGate, label: "Release gate", view: "release-gate" },
   { href: paths.pricing, label: "Pricing", view: null },
-  { href: paths.notes, label: "Notes", view: null },
+  { href: paths.brief, label: "By sector & country", view: "brief" },
 ] as const;
 
 export function SiteHeader({ current }: { current?: View }) {
@@ -31,8 +32,8 @@ export function SiteHeader({ current }: { current?: View }) {
           <span>{site.name.toUpperCase()}</span>
         </a>
         <div className="masthead-nav-wide">{links}</div>
-        <a className="btn btn-primary masthead-cta" href={paths.assessment}>
-          Free check
+        <a className="btn btn-primary masthead-cta" href={paths.plan}>
+          Build my plan
         </a>
       </div>
       <div className="masthead-nav-narrow">

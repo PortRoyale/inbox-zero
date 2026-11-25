@@ -20,12 +20,15 @@ const { outputFiles } = await build({
   define: {
     "process.env.NODE_ENV": '"production"',
     "process.env.NEXT_PUBLIC_ROUTING": '"hash"',
+    "process.env.NEXT_PUBLIC_SITE_URL": "undefined",
+    "process.env.NEXT_PUBLIC_LEAD_ENDPOINT": "undefined",
   },
   logOverride: { "unsupported-directive": "silent" },
 });
 
+if (/\bprocess\.env\b/.test(outputFiles[0].text)) throw new Error("Unresolved process.env reference in demo bundle; add it to define.");
 const js = outputFiles[0].text.replaceAll("</script", "<\\/script");
-const css = ["system.css", "pages.css"].map((f) => readFileSync(`${root}/src/design/${f}`, "utf8")).join("\n");
+const css = ["system.css", "pages.css", "plan.css"].map((f) => readFileSync(`${root}/src/design/${f}`, "utf8")).join("\n");
 
 const html = `<title>Readyline CRA Readiness</title>
 <meta name="claude:viewport-fit-sides" content="cover">

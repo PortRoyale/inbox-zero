@@ -1,4 +1,6 @@
 import { Balloon, ContactLine, Fcf, SheetHead } from "@/components/primitives";
+import { CostCalculator } from "@/components/sales/CostCalculator";
+import { LeadForm } from "@/components/sales/LeadForm";
 import { Timeline } from "@/components/Timeline";
 import { requirements } from "@/lib/cra-requirements";
 import { paths } from "@/lib/paths";
@@ -37,12 +39,29 @@ const workflow = [
 ];
 
 const modules = [
+  { name: "Security plan builder", does: "Eight steps to your Annex VII technical documentation, with risk assessment, evidence register and dated action plan.", ref: "Annex VII", live: true, href: paths.plan },
   { name: "Readiness check", does: `${requirements.length} requirements, filtered to your product, scored, with a ranked redline list.`, ref: "Annex I", live: true, href: paths.assessment },
   { name: "Release gate", does: "Security testing per release, decided by what changed rather than the version label.", ref: "Annex I Pt II(3)", live: true, href: paths.releaseGate },
-  { name: "Security plan builder", does: "Fill-in technical documentation mapped to every clause.", ref: "Annex VII" },
+  { name: "Sector & country briefs", does: "Your class, deadlines, where to report and first actions, for 14 sectors and 39 countries.", ref: "Art. 14, 32", live: true, href: paths.brief },
   { name: "SBOM watch", does: "Upload an SBOM per release; get alerted when a component gains a known vulnerability.", ref: "Annex I Pt II(1)" },
   { name: "Disclosure kit", does: "Disclosure policy, security.txt and advisory templates.", ref: "Annex I Pt II(5)" },
   { name: "Reporting playbook", does: "24-hour early warning and 72-hour notification, step by step.", ref: "Art. 14" },
+];
+
+const planSteps = ["Product", "Architecture", "Risks", "Requirements", "Development", "Vulnerabilities", "Updates & reporting", "Review & export"];
+
+const planPoints = [
+  { title: "Simple by default", body: "Essentials only, with recommended defaults. Switch to Advanced for scoring, owners, evidence links and templates." },
+  { title: "Never incomplete", body: "All 12 sections always render. Anything missing is marked as a gap and becomes an action with an owner and a due date." },
+  { title: "Auditable", body: "Every requirement maps to its CRA clause and evidence. Issued revisions carry a SHA-256 fingerprint, so edits after approval are visible." },
+  { title: "Actionable", body: "A dated action plan, a ready-to-publish disclosure policy and security.txt, and a 24/72-hour reporting runbook." },
+];
+
+const comparison = [
+  { option: "Free templates", cost: "€0", gets: "A checklist or document skeleton", missing: "No guidance on your product, no gap tracking, no evidence trail", ours: false },
+  { option: "Consultant-led", cost: "€20k–60k+", gets: "Expert judgement and a finished document", missing: "Snapshot in time; costly to keep current every release", ours: false },
+  { option: "Enterprise platforms", cost: "Custom quote", gets: "Broad GRC coverage", missing: "Built for security teams, not five-person product companies", ours: false },
+  { option: "Readyline", cost: "€0–499/mo + optional €6k", gets: "Plan builder, release records, monitoring, expert review", missing: "A notified-body certificate, where your class requires one", ours: true },
 ];
 
 const variants = [
@@ -53,9 +72,9 @@ const variants = [
 ];
 
 const features: [string, (boolean | string)[]][] = [
-  ["Readiness check and release gate", [true, true, true, true]],
-  ["Security plan builder", [false, true, true, true]],
-  ["Release record history", [false, true, true, true]],
+  ["Readiness check, release gate, briefs", [true, true, true, true]],
+  ["Security plan builder (unlimited revisions, export)", [true, true, true, true]],
+  ["Saved plans and release records in the cloud", [false, true, true, true]],
   ["SBOM watch", [false, true, true, true]],
   ["Disclosure kit", [false, true, true, true]],
   ["Products covered", ["—", "1", "up to 5", "up to 5"]],
@@ -98,20 +117,20 @@ export function Home() {
       <section className="sheet hero" aria-labelledby="hero-title">
         <div className="hero-grid">
           <div className="hero-copy">
-            <Fcf keyCell="Sheet 1/5" cells={[regulation, "Reporting in force"]} />
+            <Fcf keyCell="Sheet 1/7" cells={[regulation, "Reporting in force"]} />
             <h1 id="hero-title">
               Make your product <span className="mark mark-done">CRA-ready</span> without hiring a security team
             </h1>
             <p className="lead">{site.description}</p>
             <div className="row">
-              <a className="btn btn-primary" href={paths.assessment}>
-                Start the readiness check
+              <a className="btn btn-primary" href={paths.plan}>
+                Build my security plan
               </a>
-              <a className="btn" href={paths.releaseGate}>
-                Try the release gate
+              <a className="btn" href={paths.assessment}>
+                10-minute readiness check
               </a>
             </div>
-            <p className="label">About 10 minutes · No sign-up · Answers stay in your browser</p>
+            <p className="label">Free · No sign-up · Your data stays in your browser</p>
           </div>
           <dl className="tblock hero-tblock">
             <div>
@@ -142,7 +161,7 @@ export function Home() {
       <section className="sheet" aria-labelledby="applies-title">
         <SheetHead
           id="applies-title"
-          sheet="Sheet 2/5"
+          sheet="Sheet 2/7"
           reference="Scope · Art. 2"
           title="Built for small teams that make real products"
           intro="Enterprise compliance platforms assume you have a security department. We assume you have a few engineers and a deadline."
@@ -171,10 +190,47 @@ export function Home() {
         </div>
       </section>
 
+      <section className="sheet" aria-labelledby="plan-show-title">
+        <SheetHead
+          id="plan-show-title"
+          sheet="Sheet 3/7"
+          reference="Annex VII · Art. 13"
+          title="The security plan your auditor expects, in eight steps"
+          intro="Answer in plain language. The builder writes the technical documentation, flags every gap and turns it into an owned, dated action."
+          aside={
+            <a className="btn btn-primary" href={paths.plan}>
+              Open the plan builder
+            </a>
+          }
+        />
+        <div className="showcase">
+          <ol className="showcase-steps">
+            {planSteps.map((st, i) => (
+              <li key={st}>
+                <Balloon>{i + 1}</Balloon>
+                <span>{st}</span>
+              </li>
+            ))}
+          </ol>
+          <ul className="showcase-points">
+            {planPoints.map((pt) => (
+              <li key={pt.title}>
+                <h3>{pt.title}</h3>
+                <p>{pt.body}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="trust-line">
+          <span className="label">Designed by</span> a practising Chief Security Officer who runs product security and CRA programmes for connected
+          hardware. ENISA's 2026 SME survey found only 24% of small firms do threat modelling and over 70% want practical help. This is that help.
+        </p>
+      </section>
+
       <section className="sheet" aria-labelledby="process-title">
         <SheetHead
           id="process-title"
-          sheet="Sheet 3/5"
+          sheet="Sheet 4/7"
           reference="Obligations · Art. 13–14"
           title="From “where do we start?” to evidence on file"
         />
@@ -195,10 +251,10 @@ export function Home() {
       <section className="sheet" aria-labelledby="bom-title">
         <SheetHead
           id="bom-title"
-          sheet="Sheet 4/5"
+          sheet="Sheet 5/7"
           reference="Annex I · Annex VII"
           title="Parts list"
-          intro="Two tools are live and free today. The rest ship to early-access customers first."
+          intro="Four tools are live and free today. Monitoring and the reporting workflow ship to early-access customers first."
         />
         <div className="table-scroll">
           <table className="drawing bom">
@@ -228,10 +284,33 @@ export function Home() {
         </div>
       </section>
 
+      <section className="sheet" id="cost" aria-labelledby="cost-title">
+        <SheetHead
+          id="cost-title"
+          sheet="Sheet 6/7"
+          reference="Cost · Funding"
+          title="What CRA compliance costs you"
+          intro="Compare a consultant-led project with our guided package and platform. Change any assumption."
+        />
+        <div className="grant-banner">
+          <div>
+            <p className="label">EU funding open</p>
+            <p>
+              <strong>EU SMEs can get 50% of CRA compliance costs co-funded, up to €30,000</strong>, through the SECURE open call. The deadline was
+              extended to 29 January 2027.
+            </p>
+          </div>
+          <a className="btn" href="/guides/cra-funding/">
+            How the grant works
+          </a>
+        </div>
+        <CostCalculator />
+      </section>
+
       <section className="sheet" id="pricing" aria-labelledby="pricing-title">
         <SheetHead
           id="pricing-title"
-          sheet="Sheet 5/5"
+          sheet="Sheet 7/7"
           reference="Variants"
           title="Priced for a five-person team"
           intro="Early-access prices, locked in for founding customers."
@@ -264,12 +343,36 @@ export function Home() {
             </tbody>
           </table>
         </div>
-        <div id="contact" className="contact">
+        <h3 className="sub-h">How this compares</h3>
+        <div className="table-scroll">
+          <table className="drawing compare">
+            <thead>
+              <tr>
+                <th scope="col">Option</th>
+                <th scope="col">Typical cost</th>
+                <th scope="col">You get</th>
+                <th scope="col">What's missing</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparison.map((c) => (
+                <tr key={c.option} className={c.ours ? "is-ours" : undefined}>
+                  <th scope="row">{c.option}</th>
+                  <td className="code">{c.cost}</td>
+                  <td>{c.gets}</td>
+                  <td>{c.missing}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div id="contact" className="contact contact-form">
           <div>
             <h3>Join early access</h3>
-            <p className="muted">Tell us what you make and when you ship to the EU. A security expert replies personally.</p>
+            <p className="muted">Founding customers lock in these prices. A security expert replies within one working day.</p>
+            <ContactLine />
           </div>
-          <ContactLine />
+          <LeadForm />
         </div>
       </section>
 

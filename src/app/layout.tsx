@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/SiteFooter";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { organization } from "@/lib/seo/jsonld";
 import { site } from "@/lib/site";
 import "@/design/system.css";
 import "@/design/pages.css";
+import "@/design/plan.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
+  openGraph: { siteName: site.name, type: "website" },
   title: { default: `${site.name}: ${site.tagline}`, template: `%s | ${site.name}` },
   description: site.description,
 };
@@ -23,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <SiteFooter />
+        <JsonLd data={organization()} />
       </body>
     </html>
   );

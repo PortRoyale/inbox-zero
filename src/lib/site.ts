@@ -4,6 +4,8 @@ export const site = {
   description:
     "Find out where your product stands against the EU Cyber Resilience Act, close the gaps, and ship every release with evidence an auditor will accept.",
   contactEmail: "hello@example.com",
+  url: (process.env.NEXT_PUBLIC_SITE_URL ?? "https://readyline.example").replace(/\/$/, ""),
+  leadEndpoint: process.env.NEXT_PUBLIC_LEAD_ENDPOINT ?? "",
 };
 
 export const craDates = {
