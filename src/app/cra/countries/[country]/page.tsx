@@ -4,7 +4,6 @@ import { countries } from "@/content/countries";
 import { industries } from "@/content/industries";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BriefView } from "@/components/seo/BriefView";
-import { Crumbs } from "@/components/seo/Crumbs";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { LinkGrid } from "@/components/seo/LinkGrid";
 import { buildBrief } from "@/lib/seo/brief";
@@ -38,13 +37,17 @@ export default async function CountryPage({ params }: { params: Promise<Params> 
       <SiteHeader current="brief" />
       <main>
         <div className="wrap stack">
-          <section className="sheet">
-            <Crumbs items={crumbs} />
-            <BriefView brief={brief} />
-          </section>
-          <section className="sheet">
-            <LinkGrid title={`By sector in ${country.name}`} links={industries.map((i) => ({ href: `/cra/${i.slug}/${country.slug}/`, label: i.name }))} />
-          </section>
+          <BriefView
+            brief={brief}
+            crumbs={crumbs}
+            extraTabs={[
+              {
+                id: "sectors",
+                label: "Your sector",
+                content: <LinkGrid title={`By sector in ${country.name}`} links={industries.map((i) => ({ href: `/cra/${i.slug}/${country.slug}/`, label: i.name }))} />,
+              },
+            ]}
+          />
         </div>
         <JsonLd data={breadcrumbs(crumbs)} />
         <JsonLd data={faqPage(brief.faqs)} />

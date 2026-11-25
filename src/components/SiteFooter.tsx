@@ -26,7 +26,8 @@ export function SiteFooter() {
           <div>
             <dt>Tools</dt>
             <dd>
-              <a href={paths.assessment}>Readiness check</a> · <a href={paths.releaseGate}>Release gate</a>
+              <a href={paths.plan}>Plan builder</a> · <a href={paths.assessment}>Readiness check</a> · <a href={paths.releaseGate}>Release gate</a> ·{" "}
+              <a href={paths.pricing}>Pricing</a> · <a href={paths.guides}>Guides</a>
             </dd>
           </div>
           <div>

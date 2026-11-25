@@ -5,6 +5,7 @@ import { craClassInfo, industries, industryBySlug } from "@/content/industries";
 import type { CraClass } from "@/content/types";
 import { AreaField, Chips, SelectField, TextField, Toggle } from "@/components/plan/fields";
 import { Markdown } from "@/components/plan/Markdown";
+import { PageHero } from "@/components/PageHero";
 import { Balloon, ConfirmButton, CopyButton, Fcf } from "@/components/primitives";
 import { formatDate, useToday } from "@/components/Timeline";
 import type { AnswerStatus } from "@/lib/assessment-score";
@@ -59,6 +60,7 @@ export function PlanBuilder() {
   const [isExample, setIsExample] = useState(true);
   const [step, setStep] = useState(0);
   const [advanced, setAdvanced] = useState(false);
+  const [view, setView] = useState<"build" | "document">("build");
   const [loaded, setLoaded] = useState(false);
   const [fingerprint, setFingerprint] = useState("");
   const topRef = useRef<HTMLDivElement>(null);
@@ -124,26 +126,20 @@ export function PlanBuilder() {
 
   return (
     <div className="wrap stack">
-      <section className="sheet" aria-labelledby="plan-title">
-        <div className="sheet-head">
-          <div>
-            <Fcf keyCell="Plan builder" cells={["Annex VII", "Technical documentation"]} />
-            <h1 id="plan-title" className="page-title">
-              Product security plan
-            </h1>
-            <p className="lead">
-              Eight short steps produce the technical documentation the CRA asks for: risk assessment, how you meet every
-              requirement, vulnerability handling, reporting and an action plan with owners and dates. Gaps are never
-              hidden; they become actions.
-            </p>
-          </div>
-          <PlanStatus analysis={analysis} />
-        </div>
+      <PageHero
+        id="plan-title"
+        motif="document"
+        seed={11}
+        label="Plan builder"
+        cells={["Annex VII", "Technical documentation"]}
+        title="Product security plan"
+        lead="Eight short steps produce the technical documentation the CRA asks for. Gaps are never hidden; they become actions with owners and dates."
+        aside={<PlanStatus analysis={analysis} />}
+      >
         {isExample && (
           <div className="example-banner">
             <p>
-              <strong>Example plan loaded</strong> for a fictional smart thermostat. Edit anything to make it yours, or start
-              blank.
+              <strong>Example plan loaded</strong> for a fictional smart thermostat. Edit anything to make it yours, or start blank.
             </p>
             <div className="row">
               <SelectField
@@ -164,21 +160,32 @@ export function PlanBuilder() {
           </div>
         )}
         <div className="mode-row">
-          <span className="label">Detail level</span>
-          <div className="seg" role="radiogroup" aria-label="Detail level">
-            <button type="button" role="radio" aria-checked={!advanced} onClick={() => setAdvanced(false)}>
-              Simple
+          <span className="label">View</span>
+          <div className="seg" role="radiogroup" aria-label="View">
+            <button type="button" role="radio" aria-checked={view === "build"} onClick={() => setView("build")}>
+              Build steps
             </button>
-            <button type="button" role="radio" aria-checked={advanced} onClick={() => setAdvanced(true)}>
-              Advanced
+            <button type="button" role="radio" aria-checked={view === "document"} onClick={() => setView("document")}>
+              Document
             </button>
           </div>
-          <span className="muted mode-note">
-            {advanced ? "Showing evidence, owners, scoring and templates." : "Essentials only. Switch to Advanced any time."}
-          </span>
+          {view === "build" && (
+            <>
+              <span className="label">Detail</span>
+              <div className="seg" role="radiogroup" aria-label="Detail level">
+                <button type="button" role="radio" aria-checked={!advanced} onClick={() => setAdvanced(false)}>
+                  Simple
+                </button>
+                <button type="button" role="radio" aria-checked={advanced} onClick={() => setAdvanced(true)}>
+                  Advanced
+                </button>
+              </div>
+            </>
+          )}
         </div>
-      </section>
+      </PageHero>
 
+      {view === "build" && (
       <div className="plan-grid" ref={topRef}>
         <nav className="stepper sheet" aria-label="Plan steps">
           <ol>
@@ -246,15 +253,22 @@ export function PlanBuilder() {
             <button type="button" className="btn" onClick={() => go(Math.max(0, step - 1))} disabled={step === 0}>
               ← Back
             </button>
-            {step < STEPS.length - 1 && (
+            {step < STEPS.length - 1 ? (
               <button type="button" className="btn btn-primary" onClick={() => go(step + 1)}>
                 Next: {STEPS[step + 1].label} →
+              </button>
+            ) : (
+              <button type="button" className="btn btn-primary" onClick={() => setView("document")}>
+                Open the document →
               </button>
             )}
           </div>
         </section>
       </div>
 
+      )}
+
+      {view === "document" && (
       <section className="sheet doc-sheet" aria-labelledby="doc-title">
         <div className="sheet-head">
           <div>
@@ -266,6 +280,7 @@ export function PlanBuilder() {
         </div>
         <Markdown source={markdown} />
       </section>
+      )}
     </div>
   );
 }
@@ -932,7 +947,7 @@ function ReviewStep({
         </div>
         {importMsg && <p className="note-line">{importMsg}</p>}
       </div>
-      <p className="muted">The full document is below. Copy it as Markdown{canDownload ? " or download it" : ""} for your technical file.</p>
+      <p className="muted">Switch to the Document view to read the full plan and copy it as Markdown{canDownload ? " or download it" : ""}.</p>
     </div>
   );
 }

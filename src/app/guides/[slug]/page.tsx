@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { guides } from "@/content/guides";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Crumbs } from "@/components/seo/Crumbs";
 import { GuideView } from "@/components/seo/GuideView";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { breadcrumbs, faqPage } from "@/lib/seo/jsonld";
@@ -42,10 +41,7 @@ export default async function GuidePage({ params }: { params: Promise<Params> })
       <SiteHeader />
       <main>
         <div className="wrap stack">
-          <section className="sheet">
-            <Crumbs items={crumbs} />
-            <GuideView guide={guide} related={related} />
-          </section>
+          <GuideView guide={guide} related={related} crumbs={crumbs} />
         </div>
         <JsonLd data={breadcrumbs(crumbs)} />
         <JsonLd data={faqPage(guide.faqs)} />

@@ -3,13 +3,14 @@ import { createRoot } from "react-dom/client";
 import { Assessment } from "@/components/Assessment";
 import { Home } from "@/components/Home";
 import { ReleaseGate } from "@/components/ReleaseGate";
+import { Pricing } from "@/components/sales/Pricing";
 import { PlanBuilder } from "@/components/plan/PlanBuilder";
 import { BriefExplorer } from "@/components/seo/BriefExplorer";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import type { View } from "@/lib/paths";
 
-const VIEWS: View[] = ["assessment", "release-gate", "plan", "brief"];
+const VIEWS: View[] = ["assessment", "release-gate", "plan", "brief", "pricing"];
 
 function viewFromHash(): View {
   const hash = location.hash.slice(1);
@@ -42,6 +43,7 @@ function App() {
         {view === "release-gate" && <ReleaseGate />}
         {view === "plan" && <PlanBuilder />}
         {view === "brief" && <BriefExplorer />}
+        {view === "pricing" && <Pricing />}
         {view === "home" && <Home />}
       </main>
       <SiteFooter />

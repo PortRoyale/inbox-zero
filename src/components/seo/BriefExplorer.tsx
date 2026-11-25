@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { countries } from "@/content/countries";
 import { industries, industryBySlug } from "@/content/industries";
+import { PageHero } from "@/components/PageHero";
 import { SelectField } from "@/components/plan/fields";
-import { Fcf } from "@/components/primitives";
 import { BriefView } from "@/components/seo/BriefView";
 import { buildBrief } from "@/lib/seo/brief";
 
@@ -17,16 +17,15 @@ export function BriefExplorer({ initialIndustry = "smart-home-security", initial
 
   return (
     <div className="wrap stack">
-      <section className="sheet" aria-labelledby="explorer-title">
-        <div className="sheet-head">
-          <div>
-            <Fcf keyCell="Brief generator" cells={[`${industries.length} sectors`, `${countries.length} countries`]} />
-            <h1 id="explorer-title" className="page-title">
-              Your CRA brief, for your sector and country
-            </h1>
-            <p className="lead">Pick what you make and where you are. The brief updates instantly with your product class, deadlines, where to report and what to do first.</p>
-          </div>
-        </div>
+      <PageHero
+        id="explorer-title"
+        motif="globe"
+        seed={29}
+        label="Brief generator"
+        cells={[`${industries.length} sectors`, `${countries.length} countries`]}
+        title="Your CRA brief, for your sector and country"
+        lead="Pick what you make and where you are. The brief updates instantly with your product class, deadlines, where to report and what to do first."
+      >
         <div className="explorer-pickers">
           <SelectField id="ex-industry" label="What you make" value={industry} options={industries.map((i) => ({ value: i.slug, label: i.name }))} onChange={setIndustry} />
           <label className="field" htmlFor="ex-country">
@@ -49,10 +48,10 @@ export function BriefExplorer({ initialIndustry = "smart-home-security", initial
             </select>
           </label>
         </div>
-      </section>
-      <section className="sheet" aria-live="polite">
-        <BriefView brief={brief} headingLevel={2} />
-      </section>
+      </PageHero>
+      <div aria-live="polite">
+        <BriefView brief={brief} embedded />
+      </div>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { countries } from "@/content/countries";
 import { industryBySlug } from "@/content/industries";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BriefView } from "@/components/seo/BriefView";
-import { Crumbs } from "@/components/seo/Crumbs";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { allCombos, buildBrief } from "@/lib/seo/brief";
 import { indexedCombos } from "@/lib/seo/indexing";
@@ -46,10 +45,7 @@ export default async function ComboPage({ params }: { params: Promise<Params> })
       <SiteHeader current="brief" />
       <main>
         <div className="wrap stack">
-          <section className="sheet">
-            <Crumbs items={crumbs} />
-            <BriefView brief={buildBrief(industry, country)} />
-          </section>
+          <BriefView brief={buildBrief(industry, country)} crumbs={crumbs} />
         </div>
         <JsonLd data={breadcrumbs(crumbs)} />
       </main>

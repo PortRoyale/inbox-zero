@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageHero } from "@/components/PageHero";
 import { ConfirmButton, CopyButton, Fcf, RevisionCloud } from "@/components/primitives";
+import { SheetTabs } from "@/components/SheetTabs";
 import { formatDate, useToday } from "@/components/Timeline";
 import {
   baselineQuestions,
@@ -77,22 +79,60 @@ export function ReleaseGate() {
     .filter((t) => answers[t.id] === "yes")
     .map((t) => ({ ...t, note: notes[t.id] }));
 
+  const record = (
+    <div className="record stack-sm">
+      <h2>Release record</h2>
+      <dl className="tblock">
+        <div>
+          <dt>Product · version</dt>
+          <dd>{[release.product, release.version].filter(Boolean).join(" · ") || "Not set"}</dd>
+        </div>
+        <div>
+          <dt>Change</dt>
+          <dd>{release.ticket || "Not set"}</dd>
+        </div>
+        <div>
+          <dt>Changed surface</dt>
+          <dd>{yesTriggers.length ? yesTriggers.map((t) => t.id).join(" ") : "None"}</dd>
+        </div>
+      </dl>
+      <ul className="outcomes">
+        {result.results.map((r) => (
+          <li key={r.id} className={`outcome outcome-${r.outcome}`}>
+            <div className="outcome-head">
+              <p>{r.title}</p>
+              <span className="outcome-tag code">{outcomeLabel[r.outcome]}</span>
+            </div>
+            <p className="muted">{result.complete ? r.reason : r.description}</p>
+          </li>
+        ))}
+      </ul>
+      <div className="row">
+        {result.complete && (
+          <CopyButton label="Copy release record" getText={() => releaseRecordText({ release, date: formatDate(today), result, yesTriggers })} />
+        )}
+        {!isExample && <ConfirmButton label="Clear answers" confirmLabel="Clear everything" onConfirm={clear} />}
+      </div>
+      <p className="aside-note muted">
+        Every product should also get a full Level 1 scan of its production baseline at least quarterly, whatever the release schedule. These
+        cadences are sensible defaults; adjust them to your own policy.
+      </p>
+    </div>
+  );
+
+  const groupState = (qs: readonly { id: QuestionId }[]) => (qs.every((q) => answers[q.id]) ? ("done" as const) : ("open" as const));
+
   return (
     <div className="wrap stack">
-      <section className="sheet" aria-labelledby="gate-title">
-        <div className="sheet-head">
-          <div>
-            <Fcf keyCell="Free tool" cells={["Change control", "Annex I Pt II(3)"]} />
-            <h1 id="gate-title" className="page-title">
-              Release security gate
-            </h1>
-            <p className="lead">
-              Test depth should follow what changed, not the version label. A hotfix that touches authentication needs
-              more testing than a major release that only changes copy. Changed items get clouded, as on a drawing
-              revision.
-            </p>
-          </div>
-        </div>
+      <PageHero
+        id="gate-title"
+        motif="chip"
+        seed={23}
+        label="Free tool"
+        cells={["Change control", "Annex I Pt II(3)"]}
+        title="Release security gate"
+        lead="Test depth should follow what changed, not the version label. A hotfix that touches authentication needs more testing than a major release that only changes copy."
+      >
         {isExample && (
           <div className="example-banner">
             <p>
@@ -103,117 +143,97 @@ export function ReleaseGate() {
             </button>
           </div>
         )}
-        <div className="release-fields">
-          {(
-            [
-              ["product", "Product", "Smart thermostat"],
-              ["version", "Version", "4.12.0"],
-              ["ticket", "Change ticket / PR", "CHG-1234"],
-            ] as const
-          ).map(([key, label, placeholder]) => (
-            <label key={key} className="field" htmlFor={`release-${key}`}>
-              <span className="label">{label}</span>
-              <input
-                id={`release-${key}`}
-                value={release[key]}
-                onChange={(e) => {
-                  setIsExample(false);
-                  setRelease((r) => ({ ...r, [key]: e.target.value }));
-                }}
-                placeholder={placeholder}
-              />
-            </label>
-          ))}
-        </div>
-      </section>
+      </PageHero>
 
-      <div className="tool-grid">
-        <div className="tool-main">
-          <QuestionGroup
-            title="Baseline"
-            code="Gate 0"
-            intro="Code-level scanning is the minimum gate for every release."
-            questions={baselineQuestions}
-            answers={answers}
-            notes={notes}
-            onAnswer={setAnswer}
-            onNote={setNote}
-          />
-          <QuestionGroup
-            title="Attack-surface triggers"
-            code="Level 2"
-            intro="Any “yes” means targeted testing of what changed."
-            questions={surfaceTriggers}
-            answers={answers}
-            notes={notes}
-            onAnswer={setAnswer}
-            onNote={setNote}
-            clouded
-            action={
-              <button type="button" className="btn btn-quiet" onClick={markRemainingNo}>
-                Mark unanswered “No”
-              </button>
-            }
-          />
-          <QuestionGroup
-            title="Full penetration test triggers"
-            code="Level 3"
-            questions={pentestTriggers}
-            answers={answers}
-            notes={notes}
-            onAnswer={setAnswer}
-            onNote={setNote}
-            clouded
-          />
-        </div>
-
-        <aside className="tool-aside">
-          <div className="sheet record">
+      <SheetTabs
+        label="Release gate steps"
+        wizard
+        side={
+          <div className="sheet record-mini">
             <div className="record-head">
-              <p className="label">Release record</p>
+              <p className="label">Required testing</p>
               <p className="code muted">
-                {answeredCount}/{totalQuestions} answered
+                {answeredCount}/{totalQuestions}
               </p>
             </div>
-            <dl className="tblock">
-              <div>
-                <dt>Product · version</dt>
-                <dd>{[release.product, release.version].filter(Boolean).join(" · ") || "Not set"}</dd>
-              </div>
-              <div>
-                <dt>Change</dt>
-                <dd>{release.ticket || "Not set"}</dd>
-              </div>
-              <div>
-                <dt>Changed surface</dt>
-                <dd>{yesTriggers.length ? yesTriggers.map((t) => t.id).join(" ") : "None"}</dd>
-              </div>
-            </dl>
-            <ul className="outcomes">
+            <ul>
               {result.results.map((r) => (
-                <li key={r.id} className={`outcome outcome-${r.outcome}`}>
-                  <div className="outcome-head">
-                    <p>{r.title}</p>
-                    <span className="outcome-tag code">{outcomeLabel[r.outcome]}</span>
-                  </div>
-                  <p className="muted">{result.complete ? r.reason : r.description}</p>
+                <li key={r.id} className={`outcome-${r.outcome}`}>
+                  <span>{r.title.split(":")[0]}</span>
+                  <span className="outcome-tag code">{outcomeLabel[r.outcome]}</span>
                 </li>
               ))}
             </ul>
-            {result.complete && (
-              <CopyButton
-                label="Copy release record"
-                getText={() => releaseRecordText({ release, date: formatDate(today), result, yesTriggers })}
-              />
-            )}
-            {!isExample && <ConfirmButton label="Clear answers" confirmLabel="Clear everything" onConfirm={clear} />}
           </div>
-          <p className="aside-note muted">
-            Every product should also get a full Level 1 scan of its production baseline at least quarterly, whatever the
-            release schedule. These cadences are sensible defaults; adjust them to your own policy.
-          </p>
-        </aside>
-      </div>
+        }
+        items={[
+          {
+            id: "release",
+            label: "Release & baseline",
+            state: groupState(baselineQuestions),
+            content: (
+              <>
+                <h2>Release and baseline scans</h2>
+                <div className="release-fields">
+                  {(
+                    [
+                      ["product", "Product", "Smart thermostat"],
+                      ["version", "Version", "4.12.0"],
+                      ["ticket", "Change ticket / PR", "CHG-1234"],
+                    ] as const
+                  ).map(([key, label, placeholder]) => (
+                    <label key={key} className="field" htmlFor={`release-${key}`}>
+                      <span className="label">{label}</span>
+                      <input
+                        id={`release-${key}`}
+                        value={release[key]}
+                        onChange={(e) => {
+                          setIsExample(false);
+                          setRelease((r) => ({ ...r, [key]: e.target.value }));
+                        }}
+                        placeholder={placeholder}
+                      />
+                    </label>
+                  ))}
+                </div>
+                <QuestionGroup title="Baseline" code="Gate 0" intro="Code-level scanning is the minimum gate for every release." questions={baselineQuestions} answers={answers} notes={notes} onAnswer={setAnswer} onNote={setNote} />
+              </>
+            ),
+          },
+          {
+            id: "surface",
+            label: "Attack surface",
+            state: groupState(surfaceTriggers),
+            content: (
+              <QuestionGroup
+                title="Attack-surface triggers"
+                code="Level 2"
+                intro="Any “yes” means targeted testing of what changed. Changed items get clouded, as on a drawing revision."
+                questions={surfaceTriggers}
+                answers={answers}
+                notes={notes}
+                onAnswer={setAnswer}
+                onNote={setNote}
+                clouded
+                action={
+                  <button type="button" className="btn btn-quiet" onClick={markRemainingNo}>
+                    Mark unanswered “No”
+                  </button>
+                }
+              />
+            ),
+          },
+          {
+            id: "pentest",
+            label: "Pen test triggers",
+            state: groupState(pentestTriggers),
+            content: (
+              <QuestionGroup title="Full penetration test triggers" code="Level 3" questions={pentestTriggers} answers={answers} notes={notes} onAnswer={setAnswer} onNote={setNote} clouded />
+            ),
+          },
+          { id: "record", label: "Release record", state: result.complete ? "done" : "open", content: record },
+        ]}
+      />
     </div>
   );
 }
@@ -242,7 +262,7 @@ function QuestionGroup({
   action?: React.ReactNode;
 }) {
   return (
-    <section className="sheet" aria-label={title}>
+    <section className="q-group" aria-label={title}>
       <div className="group-head">
         <div>
           <Fcf keyCell={code} cells={[`${questions.length} items`]} />

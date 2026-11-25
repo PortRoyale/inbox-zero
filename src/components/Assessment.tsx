@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { PageHero } from "@/components/PageHero";
 import { Balloon, ConfirmButton, ContactLine, CopyButton, Fcf, RedPen } from "@/components/primitives";
+import { SheetTabs, type SheetTab } from "@/components/SheetTabs";
 import { formatDate, useToday } from "@/components/Timeline";
 import { readinessBand, scoreAssessment, type Answers, type AnswerStatus } from "@/lib/assessment-score";
 import { categories, productTypes, requirementsFor, type ProductType, type Requirement } from "@/lib/cra-requirements";
@@ -26,7 +28,7 @@ export function Assessment() {
   const [types, setTypes] = useState<ProductType[]>(["hardware", "firmware"]);
   const [answers, setAnswers] = useState<Answers>({});
   const [loaded, setLoaded] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+  const [step, setStep] = useState(0);
 
   useEffect(() => {
     try {
@@ -68,39 +70,24 @@ export function Assessment() {
     setProductName("");
     setTypes([]);
     setAnswers({});
-    setShowResults(false);
+    setStep(0);
   };
 
-  const openResults = () => {
-    setShowResults(true);
-    requestAnimationFrame(() => document.getElementById("report")?.scrollIntoView({ behavior: "smooth" }));
-  };
+  const sections = categories
+    .map((cat, ci) => ({ cat, letter: SECTION_LETTERS[ci], items: reqs.filter((r) => r.category === cat.id) }))
+    .filter((x) => x.items.length > 0);
 
-  return (
-    <div className="wrap stack">
-      <section className="sheet" aria-labelledby="assess-title">
-        <div className="sheet-head">
-          <div>
-            <Fcf keyCell="Free tool" cells={["Inspection sheet", "Annex I"]} />
-            <h1 id="assess-title" className="page-title">
-              CRA readiness check
-            </h1>
-            <p className="lead">
-              Answer honestly; “Partly” is a perfectly good answer. Your answers are saved in this browser only and never
-              leave your device.
-            </p>
-          </div>
-        </div>
-
+  const steps: SheetTab[] = [
+    {
+      id: "product",
+      label: "Your product",
+      state: types.length ? "done" : "open",
+      content: (
         <div className="setup">
+          <h2>What are you assessing?</h2>
           <label className="field" htmlFor="product-name">
             <span className="label">Product name (optional)</span>
-            <input
-              id="product-name"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              placeholder="e.g. Smart thermostat v2"
-            />
+            <input id="product-name" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="e.g. Smart thermostat v2" />
           </label>
           <fieldset className="types">
             <legend className="label">What does it include? Select all that apply.</legend>
@@ -119,75 +106,95 @@ export function Assessment() {
               })}
             </div>
           </fieldset>
+          {types.length === 0 && <p className="note-line">Select at least one type. The questions are filtered to what your product includes.</p>}
         </div>
-      </section>
-
-      {types.length === 0 ? (
-        <p className="sheet empty-state">
-          <span className="label">Waiting for input</span>
-          Select at least one product type above. The inspection items are filtered to what your product includes.
-        </p>
-      ) : (
-        <div className="tool-grid">
-          <div className="tool-main">
-            {categories.map((cat, ci) => {
-              const inCat = reqs.filter((r) => r.category === cat.id);
-              if (inCat.length === 0) return null;
-              return (
-                <section key={cat.id} className="sheet insp-section" aria-labelledby={`sec-${cat.id}`}>
-                  <div className="insp-section-head">
-                    <Fcf keyCell={`Section ${SECTION_LETTERS[ci]}`} cells={[`${inCat.length} items`]} />
-                    <h2 id={`sec-${cat.id}`}>{cat.label}</h2>
-                  </div>
-                  <ol className="insp-list">
-                    {inCat.map((r) => (
-                      <InspectionItem
-                        key={r.id}
-                        req={r}
-                        itemId={itemIds[r.id]}
-                        value={answers[r.id]}
-                        onChange={(s) => setAnswers((prev) => ({ ...prev, [r.id]: s }))}
-                      />
-                    ))}
-                  </ol>
-                </section>
-              );
-            })}
-          </div>
-
-          <aside className="tool-aside">
-            <div className="sheet status-panel">
-              <p className="label">Inspection status</p>
-              <p className="status-count code">
-                {score.answeredCount}
-                <span className="muted"> / {score.total}</span>
-              </p>
-              <div className="gauge" role="progressbar" aria-valuemin={0} aria-valuemax={score.total} aria-valuenow={score.answeredCount} aria-label="Items answered">
-                <span style={{ width: `${score.total ? (score.answeredCount / score.total) * 100 : 0}%` }} />
-              </div>
-              <dl className="status-tally">
-                {statusCounts.map((s) => (
-                  <div key={s.value}>
-                    <dt>
-                      <span className={`swatch swatch-${s.value}`} aria-hidden="true" />
-                      {s.label}
-                    </dt>
-                    <dd className="code">{s.count}</dd>
-                  </div>
-                ))}
-              </dl>
-              <button type="button" className="btn btn-primary" onClick={openResults} disabled={score.answeredCount === 0}>
-                {score.complete ? "See my report" : "See report so far"}
-              </button>
-              <ConfirmButton label="Start over" confirmLabel="Clear all answers" onConfirm={reset} />
+      ),
+    },
+    ...sections.map(({ cat, letter, items }) => {
+      const answered = items.filter((r) => answers[r.id]).length;
+      return {
+        id: cat.id,
+        label: cat.label,
+        state: answered === items.length ? ("done" as const) : ("open" as const),
+        badge: answered === items.length ? undefined : `${answered}/${items.length}`,
+        content: (
+          <section className="insp-section" aria-labelledby={`sec-${cat.id}`}>
+            <div className="insp-section-head">
+              <Fcf keyCell={`Section ${letter}`} cells={[`${items.length} items`]} />
+              <h2 id={`sec-${cat.id}`}>{cat.label}</h2>
             </div>
-          </aside>
-        </div>
-      )}
+            <ol className="insp-list">
+              {items.map((r) => (
+                <InspectionItem
+                  key={r.id}
+                  req={r}
+                  itemId={itemIds[r.id]}
+                  value={answers[r.id]}
+                  onChange={(st) => setAnswers((prev) => ({ ...prev, [r.id]: st }))}
+                />
+              ))}
+            </ol>
+          </section>
+        ),
+      };
+    }),
+    {
+      id: "report",
+      label: "Your report",
+      content:
+        score.answeredCount > 0 ? (
+          <Report productName={productName} types={types} score={score} itemIds={itemIds} />
+        ) : (
+          <p className="note-line">Answer at least one item to see your report.</p>
+        ),
+    },
+  ];
 
-      {showResults && score.answeredCount > 0 && (
-        <Report productName={productName} types={types} score={score} itemIds={itemIds} />
-      )}
+  return (
+    <div className="wrap stack">
+      <PageHero
+        id="assess-title"
+        motif="gauge"
+        seed={17}
+        label="Free tool"
+        cells={["Inspection sheet", "Annex I"]}
+        title="CRA readiness check"
+        lead="Answer honestly; “Partly” is a perfectly good answer. Your answers stay in this browser and never leave your device."
+      />
+      <SheetTabs
+        label="Readiness check steps"
+        wizard
+        items={steps}
+        value={step}
+        onValueChange={setStep}
+        side={
+          <div className="sheet status-panel">
+            <p className="label">Inspection status</p>
+            <p className="status-count code">
+              {score.answeredCount}
+              <span className="muted"> / {score.total}</span>
+            </p>
+            <div className="gauge" role="progressbar" aria-valuemin={0} aria-valuemax={score.total} aria-valuenow={score.answeredCount} aria-label="Items answered">
+              <span style={{ width: `${score.total ? (score.answeredCount / score.total) * 100 : 0}%` }} />
+            </div>
+            <dl className="status-tally">
+              {statusCounts.map((sc) => (
+                <div key={sc.value}>
+                  <dt>
+                    <span className={`swatch swatch-${sc.value}`} aria-hidden="true" />
+                    {sc.label}
+                  </dt>
+                  <dd className="code">{sc.count}</dd>
+                </div>
+              ))}
+            </dl>
+            <button type="button" className="btn btn-primary" onClick={() => setStep(steps.length - 1)} disabled={score.answeredCount === 0}>
+              {score.complete ? "See my report" : "See report so far"}
+            </button>
+            <ConfirmButton label="Start over" confirmLabel="Clear all answers" onConfirm={reset} />
+          </div>
+        }
+      />
     </div>
   );
 }
@@ -259,7 +266,7 @@ function Report({
   const date = formatDate(today);
 
   return (
-    <section id="report" className="sheet report" aria-labelledby="report-title">
+    <div id="report" className="report" aria-labelledby="report-title">
       <div className="sheet-head">
         <div>
           <Fcf keyCell="Inspection report" cells={[date, `${score.answeredCount}/${score.total} answered`]} />
@@ -341,7 +348,7 @@ function Report({
         <ContactLine />
       </div>
       <p className="label">Self-assessment guidance. Not legal advice or a conformity assessment.</p>
-    </section>
+    </div>
   );
 }
 

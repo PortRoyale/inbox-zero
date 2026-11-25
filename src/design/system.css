@@ -829,3 +829,160 @@ table.drawing tbody tr:last-child > * {
     border-width: 1px;
   }
 }
+
+/* ---------- Page hero with generated drawing backdrop (used by every page) ---------- */
+
+.page-hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-7);
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(100%, 52rem);
+  height: 100%;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 55%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 55%);
+  opacity: 0.55;
+}
+
+@media (max-width: 47.99rem) {
+  .backdrop {
+    width: 100%;
+    height: 16rem;
+    inset: 0 0 auto auto;
+    opacity: 0.35;
+    -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+  }
+}
+
+.backdrop * {
+  vector-effect: non-scaling-stroke;
+}
+
+.bd-traces path,
+.bd-traces rect,
+.bd-traces circle {
+  fill: none;
+  stroke: var(--nonphoto);
+  stroke-width: 1.2;
+}
+
+.bd-centre line {
+  stroke: var(--ink-3);
+  stroke-width: 0.8;
+  stroke-dasharray: 14 4 2 4;
+}
+
+.bd-motif * {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.bd-motif .bd-hidden {
+  stroke-dasharray: 5 4;
+  stroke-width: 1;
+}
+
+.bd-motif .bd-proj {
+  stroke: var(--ink-3);
+  stroke-width: 0.8;
+}
+
+.bd-dim line {
+  stroke: var(--ink-2);
+  stroke-width: 1;
+}
+
+.bd-dim text {
+  fill: var(--ink-2);
+  font-family: var(--font-code);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.bd-arrowhead {
+  fill: var(--ink-2);
+}
+
+.page-hero-grid {
+  position: relative;
+  display: grid;
+  gap: var(--s-7);
+}
+
+@media (min-width: 60rem) {
+  .page-hero-grid:has(.page-hero-aside) {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    align-items: end;
+  }
+}
+
+.page-hero-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  min-width: 0;
+}
+
+.page-hero-body .lead {
+  max-width: 44rem;
+}
+
+.page-hero-aside {
+  position: relative;
+  min-width: 0;
+}
+
+.page-hero > :not(.backdrop) {
+  position: relative;
+}
+
+/* ---------- Sheet tabs: one pattern for all long content ---------- */
+
+.step-btn[aria-selected="true"] {
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--nonphoto) 10%, var(--paper));
+  font-weight: 700;
+}
+
+.tab-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  min-width: 0;
+}
+
+@media (min-width: 64rem) {
+  .tab-side {
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 5rem);
+  }
+  .tab-side > .stepper {
+    position: static;
+  }
+}
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  min-width: 0;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
+.tab-panel > h2,
+.tab-panel > h3 {
+  font-size: var(--t-5);
+}

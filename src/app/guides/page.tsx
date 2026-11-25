@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { guides } from "@/content/guides";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Fcf } from "@/components/primitives";
+import { PageHero } from "@/components/PageHero";
 import { LinkGrid } from "@/components/seo/LinkGrid";
 
 export const metadata: Metadata = {
@@ -16,10 +16,16 @@ export default function GuidesIndex() {
       <SiteHeader />
       <main>
         <div className="wrap stack">
-          <section className="sheet stack-sm">
-            <Fcf keyCell="Guides" cells={[`${guides.length} topics`]} />
-            <h1 className="page-title">Cyber Resilience Act guides</h1>
-            <p className="lead">Plain answers to what product teams search for, each with sources and a next step.</p>
+          <PageHero
+            id="guides-title"
+            motif="document"
+            seed={5}
+            label="Guides"
+            cells={[`${guides.length} topics`]}
+            title="Cyber Resilience Act guides"
+            lead="Plain answers to what product teams search for, each with sources and a next step."
+          />
+          <section className="sheet">
             <LinkGrid title="All guides" links={guides.map((g) => ({ href: `/guides/${g.slug}/`, label: g.title }))} />
           </section>
         </div>

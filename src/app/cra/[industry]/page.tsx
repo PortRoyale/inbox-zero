@@ -5,7 +5,6 @@ import { guides } from "@/content/guides";
 import { industries, industryBySlug } from "@/content/industries";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BriefView } from "@/components/seo/BriefView";
-import { Crumbs } from "@/components/seo/Crumbs";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { LinkGrid } from "@/components/seo/LinkGrid";
 import { buildBrief } from "@/lib/seo/brief";
@@ -37,17 +36,18 @@ export default async function IndustryPage({ params }: { params: Promise<Params>
       <SiteHeader current="brief" />
       <main>
         <div className="wrap stack">
-          <section className="sheet">
-            <Crumbs items={crumbs} />
-            <BriefView brief={brief} />
-          </section>
-          <section className="sheet stack-sm">
-            <LinkGrid
-              title={`${industry.name}: your country`}
-              links={countries.map((c) => ({ href: `/cra/${industry.slug}/${c.slug}/`, label: c.name, meta: c.inEU ? "EU" : "Exporter" }))}
-            />
-            <LinkGrid title="Guides" links={guides.slice(0, 6).map((g) => ({ href: `/guides/${g.slug}/`, label: g.title }))} />
-          </section>
+          <BriefView
+            brief={brief}
+            crumbs={crumbs}
+            extraTabs={[
+              {
+                id: "countries",
+                label: "Your country",
+                content: <LinkGrid title={`${industry.name}: pick your country`} links={countries.map((c) => ({ href: `/cra/${industry.slug}/${c.slug}/`, label: c.name, meta: c.inEU ? "EU" : "Exporter" }))} />,
+              },
+              { id: "guides", label: "Guides", content: <LinkGrid title="Guides" links={guides.map((g) => ({ href: `/guides/${g.slug}/`, label: g.title }))} /> },
+            ]}
+          />
         </div>
         <JsonLd data={breadcrumbs(crumbs)} />
         <JsonLd data={faqPage(brief.faqs)} />

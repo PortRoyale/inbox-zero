@@ -5,7 +5,7 @@ const nav = [
   { href: paths.plan, label: "Plan builder", view: "plan" },
   { href: paths.assessment, label: "Readiness check", view: "assessment" },
   { href: paths.releaseGate, label: "Release gate", view: "release-gate" },
-  { href: paths.pricing, label: "Pricing", view: null },
+  { href: paths.pricing, label: "Pricing", view: "pricing" },
   { href: paths.brief, label: "By sector & country", view: "brief" },
 ] as const;
 

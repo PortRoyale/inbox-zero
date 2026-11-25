@@ -8,8 +8,7 @@ export const paths = hashRouting
       plan: "#plan",
       brief: "#brief",
       pricing: "#pricing",
-      notes: "#notes",
-      contact: "#contact",
+      guides: "#brief",
     }
   : {
       home: "/",
@@ -17,9 +16,8 @@ export const paths = hashRouting
       releaseGate: "/release-gate/",
       plan: "/plan/",
       brief: "/cra/",
-      pricing: "/#pricing",
-      notes: "/#notes",
-      contact: "/#contact",
+      pricing: "/pricing/",
+      guides: "/guides/",
     };
 
-export type View = "home" | "assessment" | "release-gate" | "plan" | "brief";
+export type View = "home" | "assessment" | "release-gate" | "plan" | "brief" | "pricing";
