@@ -4,7 +4,8 @@ import { ipHash } from "@/server/crypto/secrets";
 import { all, get, newId, now, run } from "@/server/db";
 import { notFound, tooMany } from "@/server/errors";
 import { audit, rateLimit, sendMail } from "@/server/platform";
-import { orgName, setTier, type Tier } from "@/server/services/orgs";
+import { grantManual } from "@/server/services/billing";
+import { orgName, type Tier } from "@/server/services/orgs";
 
 export type Lead = { name: string; email: string; company: string; makes?: string; sellWhen?: string; plan?: string; notes?: string };
 
@@ -47,7 +48,7 @@ export function listAllOrgs() {
   ).map((r) => ({ id: r.id, name: orgName(r.id, r.name_sealed), tier: r.tier, createdAt: r.created_at, members: r.members, products: r.products }));
 }
 
-export function adminSetTier(actorId: string, orgId: string, tier: Tier) {
+export function adminSetTier(actorId: string, orgId: string, tier: Tier, until: number | null = null) {
   if (!get("SELECT 1 FROM orgs WHERE id = $id", { id: orgId })) throw notFound();
-  setTier(actorId, orgId, tier);
+  grantManual(actorId, orgId, tier, until);
 }

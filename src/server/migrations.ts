@@ -207,4 +207,32 @@ CREATE TABLE exports (
 CREATE INDEX exports_product ON exports(product_id, created_at);
 `,
   },
+  {
+    version: 3,
+    sql: `
+-- Billing state per team. Entitlement: an active paid period, or the 14-day trial from team creation.
+CREATE TABLE billing (
+  org_id TEXT PRIMARY KEY REFERENCES orgs(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL CHECK (provider IN ('finix', 'stripe', 'manual')),
+  tier TEXT NOT NULL CHECK (tier IN ('starter', 'team')),
+  status TEXT NOT NULL CHECK (status IN ('pending', 'active', 'past_due', 'canceled', 'expired')),
+  customer_ref TEXT,
+  subscription_ref TEXT,
+  checkout_ref TEXT,
+  paid_until INTEGER,
+  reminded_at INTEGER,
+  updated_at INTEGER NOT NULL
+) STRICT;
+
+-- Every processed provider event, so retries and replays are applied exactly once.
+CREATE TABLE billing_events (
+  provider TEXT NOT NULL,
+  event_id TEXT NOT NULL,
+  org_id TEXT,
+  type TEXT NOT NULL,
+  received_at INTEGER NOT NULL,
+  PRIMARY KEY (provider, event_id)
+) STRICT;
+`,
+  },
 ];

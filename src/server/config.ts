@@ -17,7 +17,67 @@ export type Config = {
   superadmins: string[];
   ipSalt: string;
   trustProxyHops: number;
+  billing: BillingConfig;
 };
+
+export type BillingConfig =
+  | { provider: "none" }
+  | {
+      provider: "finix";
+      apiUrl: string;
+      username: string;
+      password: string;
+      merchantId: string;
+      webhookKey: string;
+      webhookBearer: string | null;
+      currency: string;
+      // Annual prepayment in minor units (cents).
+      prices: { starter: number; team: number };
+      termsUrl: string;
+    }
+  | {
+      provider: "stripe";
+      apiUrl: string;
+      secretKey: string;
+      webhookSecret: string;
+      prices: { starter: string; team: string };
+      automaticTax: boolean;
+    };
+
+function billingConfig(env: NodeJS.ProcessEnv, appUrl: string): BillingConfig {
+  const provider = (env.BILLING_PROVIDER ?? "none").trim().toLowerCase();
+  const need = (name: string) => {
+    const value = env[name]?.trim();
+    if (!value) throw new Error(`${name} is required when BILLING_PROVIDER=${provider}`);
+    return value;
+  };
+  if (provider === "finix") {
+    return {
+      provider,
+      apiUrl: (env.FINIX_API_URL ?? "https://finix.sandbox-payments-api.com").replace(/\/+$/, ""),
+      username: need("FINIX_USERNAME"),
+      password: need("FINIX_PASSWORD"),
+      merchantId: need("FINIX_MERCHANT_ID"),
+      webhookKey: need("FINIX_WEBHOOK_SIGNING_KEY"),
+      webhookBearer: env.FINIX_WEBHOOK_BEARER?.trim() || null,
+      currency: (env.FINIX_CURRENCY ?? "USD").trim().toUpperCase(),
+      prices: { starter: Number(env.FINIX_PRICE_STARTER_YEAR ?? 178800), team: Number(env.FINIX_PRICE_TEAM_YEAR ?? 598800) },
+      termsUrl: env.TERMS_URL?.trim() || `${appUrl}/terms/`,
+    };
+  }
+  if (provider === "stripe") {
+    return {
+      provider,
+      apiUrl: (env.STRIPE_API_URL ?? "https://api.stripe.com").replace(/\/+$/, ""),
+      secretKey: need("STRIPE_SECRET_KEY"),
+      webhookSecret: need("STRIPE_WEBHOOK_SECRET"),
+      prices: { starter: need("STRIPE_PRICE_STARTER"), team: need("STRIPE_PRICE_TEAM") },
+      automaticTax: env.STRIPE_AUTOMATIC_TAX === "1",
+    };
+  }
+  if (provider !== "none") throw new Error("BILLING_PROVIDER must be finix, stripe or none");
+  return { provider: "none" };
+}
 
 let cached: Config | undefined;
 
@@ -59,6 +119,7 @@ export function config(): Config {
     // Number of reverse proxies in front of the app (Caddy in the supplied deployment). Used to pick
     // the client address from X-Forwarded-For; 0 ignores the header entirely.
     trustProxyHops: Math.min(5, Math.max(0, Number(env.TRUST_PROXY_HOPS ?? (isProd ? 1 : 0)) || 0)),
+    billing: billingConfig(env, appUrl),
   };
   return cached;
 }

@@ -75,7 +75,7 @@ function shapeIncident(r: IncidentRow) {
 export type IncidentView = ReturnType<typeof shapeIncident>;
 
 export function createIncident(userId: string, productId: string, input: { kind: IncidentKind; awareAt: number; data: IncidentData }) {
-  const { org } = requireProduct(userId, productId, "editor");
+  const { org } = requireProduct(userId, productId, "editor", { allowLapsed: true });
   if (input.awareAt > now() + 5 * 60_000) throw badRequest("The time you became aware cannot be in the future.");
   const id = newId();
   const t = now();
@@ -89,7 +89,7 @@ export function createIncident(userId: string, productId: string, input: { kind:
 }
 
 export function updateIncident(userId: string, productId: string, incidentId: string, patch: { times?: Partial<Record<TimeField, number | null>>; data?: Partial<IncidentData> }) {
-  const { org } = requireProduct(userId, productId, "editor");
+  const { org } = requireProduct(userId, productId, "editor", { allowLapsed: true });
   const row = get<IncidentRow>("SELECT * FROM incidents WHERE id = $id AND product_id = $p", { id: incidentId, p: productId });
   if (!row) throw notFound();
   const sets: string[] = [];
@@ -118,7 +118,7 @@ export function listIncidents(userId: string, productId: string) {
 }
 
 export function deleteIncident(userId: string, productId: string, incidentId: string) {
-  const { org } = requireProduct(userId, productId, "admin");
+  const { org } = requireProduct(userId, productId, "admin", { allowLapsed: true });
   const res = run("DELETE FROM incidents WHERE id = $id AND product_id = $p", { id: incidentId, p: productId });
   if (Number(res.changes) === 0) throw notFound();
   audit({ orgId: org.orgId, userId, action: "incident.deleted", targetType: "incident", targetId: incidentId });
@@ -137,7 +137,7 @@ export type EvidenceManifest = {
 };
 
 export function exportEvidence(userId: string, productId: string, extras: { sboms: unknown[] }) {
-  const { org, name } = requireProduct(userId, productId, "editor");
+  const { org, name } = requireProduct(userId, productId, "editor", { allowLapsed: true });
   const plan = getPlan(userId, productId);
   const bundle = {
     product: { id: productId, name },

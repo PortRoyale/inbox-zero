@@ -4,6 +4,7 @@ import { HttpError } from "@/server/errors";
 import { all } from "@/server/db";
 import { open } from "@/server/crypto/envelope";
 import { publicKeyDocument } from "@/server/crypto/keys";
+import * as billing from "@/server/services/billing";
 import * as evidence from "@/server/services/evidence";
 import * as leads from "@/server/services/leads";
 import * as orgs from "@/server/services/orgs";
@@ -183,6 +184,16 @@ export const productRoutes = [
   ),
   route({ method: "POST", path: "/cron/sbom-watch", access: "cron" }, () => sbom.watchAll()),
 
+  // ---------- Billing ----------
+  route({ method: "GET", path: "/orgs/:orgId/billing", access: "verified" }, ({ user, params }) => billing.billingStatus(user.id, params.orgId)),
+  route({ method: "POST", path: "/orgs/:orgId/billing/checkout", access: "verified", body: v.object({ tier: v.enum(["starter", "team"] as const) }) }, ({ user, params, body }) =>
+    billing.startCheckout(user, params.orgId, body.tier),
+  ),
+  route({ method: "POST", path: "/orgs/:orgId/billing/portal", access: "verified" }, ({ user, params }) => billing.portalUrl(user.id, params.orgId)),
+  route({ method: "POST", path: "/billing/webhook/finix", access: "webhook" }, ({ rawBody, req }) => billing.handleFinixWebhook(rawBody, req.headers)),
+  route({ method: "POST", path: "/billing/webhook/stripe", access: "webhook" }, ({ rawBody, req }) => billing.handleStripeWebhook(rawBody, req.headers)),
+  route({ method: "POST", path: "/cron/billing", access: "cron" }, () => billing.billingSweep()),
+
   // ---------- Leads ----------
   route(
     {
@@ -217,10 +228,13 @@ export const productRoutes = [
     return { ok: true };
   }),
   route({ method: "GET", path: "/admin/orgs", access: "superadmin" }, () => ({ orgs: leads.listAllOrgs() })),
-  route({ method: "PATCH", path: "/admin/orgs/:orgId", access: "superadmin", body: v.object({ tier: v.enum(["starter", "team"] as const) }) }, ({ user, params, body }) => {
-    leads.adminSetTier(user.id, params.orgId, body.tier);
-    return { ok: true };
-  }),
+  route(
+    { method: "PATCH", path: "/admin/orgs/:orgId", access: "superadmin", body: v.object({ tier: v.enum(["starter", "team"] as const), until: v.optional(v.timestamp()) }) },
+    ({ user, params, body }) => {
+      leads.adminSetTier(user.id, params.orgId, body.tier, body.until ?? null);
+      return { ok: true };
+    },
+  ),
   route({ method: "GET", path: "/admin/me", access: "user" }, ({ user }) => ({ superadmin: isSuperadmin(user) })),
 
   // ---------- Personal data export (GDPR Art. 15 and 20) ----------

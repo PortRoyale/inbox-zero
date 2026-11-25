@@ -4,6 +4,7 @@ import { open, seal } from "@/server/crypto/envelope";
 import { all, get, newId, now, run, tx } from "@/server/db";
 import { badRequest, notFound, tooMany } from "@/server/errors";
 import { audit, rateLimit, sendMail } from "@/server/platform";
+import { entitlement } from "@/server/services/billing";
 import { requireProduct } from "@/server/services/products";
 
 type SbomRow = {
@@ -159,7 +160,7 @@ export function setFindingStatus(userId: string, productId: string, findingId: s
 }
 
 export function deleteSbom(userId: string, productId: string, sbomId: string) {
-  const { org } = requireProduct(userId, productId, "admin");
+  const { org } = requireProduct(userId, productId, "admin", { allowLapsed: true });
   const res = run("DELETE FROM sboms WHERE id = $s AND product_id = $p", { s: sbomId, p: productId });
   if (Number(res.changes) === 0) throw notFound();
   audit({ orgId: org.orgId, userId, action: "sbom.deleted", targetType: "sbom", targetId: sbomId });
@@ -167,10 +168,12 @@ export function deleteSbom(userId: string, productId: string, sbomId: string) {
 
 /** Cron: re-checks the latest SBOM of every active product and emails owners and admins about new critical or high findings. */
 export async function watchAll() {
-  const latest = all<{ id: string; product_id: string; org_id: string; name_sealed: string }>(
+  const latestAll = all<{ id: string; product_id: string; org_id: string; name_sealed: string }>(
     `SELECT s.id, s.product_id, p.org_id, p.name_sealed FROM sboms s JOIN products p ON p.id = s.product_id
      WHERE p.archived_at IS NULL AND s.created_at = (SELECT MAX(created_at) FROM sboms x WHERE x.product_id = s.product_id)`,
   );
+  // Monitoring is a paid feature: only teams with an active plan or trial are watched.
+  const latest = latestAll.filter((s) => entitlement(s.org_id).canWrite);
   let checked = 0;
   let alerts = 0;
   let errors = 0;

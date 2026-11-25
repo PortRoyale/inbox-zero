@@ -8,7 +8,7 @@ import { ValidationError, type V } from "@/server/validate";
 // JSON-only bodies with a byte cap, session lookup, validation, and uniform error mapping.
 
 export type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-export type Access = "public" | "user" | "verified" | "superadmin" | "cron";
+export type Access = "public" | "user" | "verified" | "superadmin" | "cron" | "webhook";
 
 export type Ctx<B> = {
   req: Request;
@@ -19,6 +19,8 @@ export type Ctx<B> = {
   sessionToken: string | undefined;
   ip: string | null;
   userAgent: string | null;
+  /** Raw request body, only for webhook routes (signatures are computed over the exact bytes). */
+  rawBody: string;
 };
 
 export type Route<B = unknown> = {
@@ -169,7 +171,12 @@ export function createDispatcher(routes: Route[], prefix = "/api") {
       const { r, params } = found;
       const mutating = method !== "GET" && method !== "HEAD";
 
-      if (r.access === "cron") {
+      let rawBody = "";
+      if (r.access === "webhook") {
+        // Payment providers call these server to server: no browser origin, no session. The handler
+        // must verify the provider's signature over the raw body before trusting anything in it.
+        rawBody = await readBody(req, r.maxBytes ?? 1024 * 1024);
+      } else if (r.access === "cron") {
         const secret = config().cronSecret;
         const given = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
         if (!secret || !safeEqual(given, secret)) throw new HttpError(401, "Unauthorised.");
@@ -192,7 +199,7 @@ export function createDispatcher(routes: Route[], prefix = "/api") {
       }
 
       const sessionToken = readCookie(req.headers.get("cookie"), sessionCookieName());
-      const user = r.access === "public" || r.access === "cron" ? null : sessionUser(sessionToken);
+      const user = r.access === "public" || r.access === "cron" || r.access === "webhook" ? null : sessionUser(sessionToken);
       if ((r.access === "user" || r.access === "verified" || r.access === "superadmin") && !user) throw new HttpError(401, "Sign in to continue.");
       if ((r.access === "verified" || r.access === "superadmin") && !user!.emailVerified) throw new HttpError(403, "Confirm your email first.");
       if (r.access === "superadmin" && !config().superadmins.includes(user!.email.toLowerCase())) throw new HttpError(404, "Not found.");
@@ -206,6 +213,7 @@ export function createDispatcher(routes: Route[], prefix = "/api") {
         sessionToken,
         ip: clientIp(req),
         userAgent: req.headers.get("user-agent"),
+        rawBody,
       });
       if (result instanceof Response) return result;
       return json(result ?? { ok: true });

@@ -11,6 +11,7 @@ import { all, get, newId, now, run, tx } from "@/server/db";
 import { badRequest, HttpError, notFound } from "@/server/errors";
 import { audit } from "@/server/platform";
 import type { Profile } from "@/server/services/accounts";
+import { requireWritable } from "@/server/services/billing";
 import { requireOrg, TIERS, type Role } from "@/server/services/orgs";
 
 type ProductRow = { id: string; org_id: string; name_sealed: string; industry: string; created_at: number; updated_at: number; archived_at: number | null };
@@ -20,10 +21,13 @@ const today = () => new Date(now()).toISOString().slice(0, 10);
 
 // Every product read or write goes through here: membership of the product's team is required, and
 // non-members get 404 so product ids cannot be probed across teams.
-export function requireProduct(userId: string, productId: string, min: Role = "viewer") {
+// Writes also need an active plan or trial, except where `allowLapsed` is set: incident reporting
+// (a legal duty), exports and deletions always work.
+export function requireProduct(userId: string, productId: string, min: Role = "viewer", opts: { allowLapsed?: boolean } = {}) {
   const row = get<ProductRow>("SELECT * FROM products WHERE id = $id", { id: productId });
   if (!row) throw notFound();
   const org = requireOrg(userId, row.org_id, min);
+  if (min !== "viewer" && !opts.allowLapsed) requireWritable(row.org_id);
   return { row, org, name: productName(row) };
 }
 
@@ -66,6 +70,7 @@ function openFindingCounts(productId: string) {
 
 export function createProduct(userId: string, orgId: string, input: { name: string; industry: string }) {
   const org = requireOrg(userId, orgId, "editor");
+  requireWritable(orgId);
   const active = get<{ n: number }>("SELECT COUNT(*) AS n FROM products WHERE org_id = $o AND archived_at IS NULL", { o: orgId })!.n;
   const limit = TIERS[org.tier].products;
   if (active >= limit) throw badRequest(`Your plan covers ${limit} product${limit > 1 ? "s" : ""}. Archive one or upgrade to add more.`);
@@ -101,7 +106,7 @@ export function renameProduct(userId: string, productId: string, name: string) {
 }
 
 export function setArchived(userId: string, productId: string, archived: boolean) {
-  const { org } = requireProduct(userId, productId, "admin");
+  const { org } = requireProduct(userId, productId, "admin", { allowLapsed: archived });
   if (!archived) {
     const active = get<{ n: number }>("SELECT COUNT(*) AS n FROM products WHERE org_id = $o AND archived_at IS NULL", { o: org.orgId })!.n;
     if (active >= TIERS[org.tier].products) throw badRequest("Your plan's product limit is reached. Archive another product first.");
@@ -111,7 +116,7 @@ export function setArchived(userId: string, productId: string, archived: boolean
 }
 
 export function deleteProduct(userId: string, productId: string, confirmName: string) {
-  const { org, name } = requireProduct(userId, productId, "admin");
+  const { org, name } = requireProduct(userId, productId, "admin", { allowLapsed: true });
   if (confirmName.trim() !== name.trim()) throw badRequest("Type the product name exactly to confirm.");
   run("DELETE FROM products WHERE id = $id", { id: productId });
   audit({ orgId: org.orgId, userId, action: "product.deleted", targetType: "product", targetId: productId });
