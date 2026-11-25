@@ -19,6 +19,8 @@ const variants = [
 const features: [string, (boolean | string)[]][] = [
   ["Readiness check, release gate, briefs", [true, true, true, true]],
   ["Security plan builder (unlimited revisions, export)", [true, true, true, true]],
+  ["Supplier questionnaires and EU funding outline", [true, true, true, true]],
+  ["UK PSTI and radio (EN 18031) checks", [true, true, true, true]],
   ["Saved plans and release records in the cloud", [false, true, true, true]],
   ["SBOM watch", [false, true, true, true]],
   ["Disclosure kit", [false, true, true, true]],

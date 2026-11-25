@@ -3,36 +3,13 @@
 import { useState } from "react";
 import { SelectField, TextField, Toggle } from "@/components/plan/fields";
 import { Fcf } from "@/components/primitives";
-
-const DAYS_BY_CLASS = { default: 15, "important-1": 25, "important-2": 35 } as const;
-type Cls = keyof typeof DAYS_BY_CLASS;
-
-const STARTER_YEAR = 149 * 12;
-const TEAM_YEAR = 499 * 12;
-const GUIDED = 6000;
-const GRANT_CAP = 30000;
-
-export function estimateCosts({ products, cls, dayRate, penTest, euSme }: { products: number; cls: Cls; dayRate: number; penTest: number; euSme: boolean }) {
-  const consultingDays = DAYS_BY_CLASS[cls] * products;
-  const outsourced = consultingDays * dayRate + penTest * products;
-  const subscription = products > 1 ? TEAM_YEAR : STARTER_YEAR;
-  const withUs = GUIDED + subscription + penTest * products;
-  const grant = (cost: number) => (euSme ? Math.min(cost * 0.5, GRANT_CAP) : 0);
-  return {
-    consultingDays,
-    outsourced,
-    outsourcedNet: outsourced - grant(outsourced),
-    withUs,
-    withUsNet: withUs - grant(withUs),
-    subscription,
-  };
-}
+import { DAYS_BY_CLASS, TEAM_YEAR, estimateCosts } from "@/lib/costs";
 
 const eur = (n: number) => `€${Math.round(n).toLocaleString("en-GB")}`;
 
 export function CostCalculator() {
   const [products, setProducts] = useState("1");
-  const [cls, setCls] = useState<Cls>("default");
+  const [cls, setCls] = useState<"default" | "important-1" | "important-2">("default");
   const [dayRate, setDayRate] = useState("1200");
   const [penTest, setPenTest] = useState("12000");
   const [euSme, setEuSme] = useState(true);
@@ -49,7 +26,7 @@ export function CostCalculator() {
     <div className="calc">
       <div className="form-grid">
         <TextField id="calc-products" label="Products" type="number" value={products} onChange={setProducts} />
-        <SelectField<Cls>
+        <SelectField<"default" | "important-1" | "important-2">
           id="calc-class"
           label="Product category"
           value={cls}

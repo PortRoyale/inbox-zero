@@ -31,7 +31,8 @@ import {
 } from "@/lib/plan/model";
 import { riskLevel, riskScore, suggestRisks } from "@/lib/plan/risks";
 import { PLAN_FROM_ASSESSMENT_KEY, PLAN_PRESET_KEY, PLAN_STORAGE_KEY } from "@/lib/plan/storage";
-import { disclosurePolicy, reportingRunbook, securityTxt } from "@/lib/plan/templates";
+import { disclosurePolicy, fundingOutline, reportingRunbook, securityTxt, supplierQuestionnaire } from "@/lib/plan/templates";
+import { DAYS_BY_CLASS, GUIDED, STARTER_YEAR } from "@/lib/costs";
 
 const ASSESSMENT_KEY = "cra-assessment-v1";
 const canDownload = process.env.NEXT_PUBLIC_ROUTING !== "hash";
@@ -459,6 +460,15 @@ function ProductStep({ plan, update, advanced }: StepProps) {
           </button>
         )}
       </div>
+      <fieldset className="span-2 regimes">
+        <legend className="label">Other rules that apply today</legend>
+        <div className="form-grid">
+          <Toggle id="p-radio" label="It has a radio (Wi-Fi, Bluetooth, cellular…)" checked={p.radio} onChange={(radio) => set({ radio })} hint="EN 18031 under the RED delegated act, since 1 Aug 2025." />
+          {p.radio && <Toggle id="p-red" label="EN 18031 assessment done" checked={p.redAssessed} onChange={(redAssessed) => set({ redAssessed })} />}
+          <Toggle id="p-uk" label="We also sell it in the UK" checked={p.soldInUk} onChange={(soldInUk) => set({ soldInUk })} hint="UK PSTI Act, since 29 Apr 2024." />
+          {p.soldInUk && <Toggle id="p-psti" label="PSTI statement of compliance ready" checked={p.pstiStatement} onChange={(pstiStatement) => set({ pstiStatement })} />}
+        </div>
+      </fieldset>
       <div className="class-callout span-2">
         <Fcf keyCell="CRA class" cells={[craClassInfo[p.craClass].label, `Self-assess: ${craClassInfo[p.craClass].selfAssess}`]} />
         <p>{craClassInfo[p.craClass].route}</p>
@@ -474,7 +484,6 @@ function ProductStep({ plan, update, advanced }: StepProps) {
             onChange={(craClass) => set({ craClass })}
             hint="Check Annex III and IV and Implementing Regulation (EU) 2025/2392."
           />
-          <Toggle id="p-radio" label="Contains a radio (Wi-Fi, Bluetooth, cellular…)" checked={p.radio} onChange={(radio) => set({ radio })} hint="RED delegated act and EN 18031 apply today." />
           <div className="span-2">
             <AreaField
               id="p-justify"
@@ -566,6 +575,7 @@ function ArchitectureStep({ plan, update, advanced }: StepProps) {
       </div>
       <Chips label="External interfaces (select all)" options={interfaceOptions} selected={plan.interfaces} onChange={(interfaces) => update((x) => ({ ...x, interfaces }))} />
       <Chips label="Data the product handles" options={dataOptions} selected={plan.data} onChange={(data) => update((x) => ({ ...x, data }))} />
+      {plan.components.some((c) => c.kind === "third-party") && <TemplateBlock title="Supplier security questionnaire" text={supplierQuestionnaire(plan)} />}
       <p className="muted">Your selections generate the risk assessment in the next step.</p>
     </div>
   );
@@ -1024,6 +1034,16 @@ function ReviewStep({
         {analysis.blockers.length > 0 && <p className="note-line">You can issue a draft revision now; it will record {analysis.blockers.length} blocking item(s) as open.</p>}
       </div>
 
+      <TemplateBlock
+        title="EU co-funding application outline"
+        text={fundingOutline(plan, analysis, {
+          consultingDays: Math.round(DAYS_BY_CLASS[plan.product.craClass] / 3),
+          dayRate: 1200,
+          penTest: 12000,
+          platform: STARTER_YEAR,
+          guided: GUIDED,
+        })}
+      />
       <details className="backup">
         <summary className="label">Back up, move or clear this plan</summary>
         <div className="row">

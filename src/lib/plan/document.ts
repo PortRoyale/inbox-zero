@@ -174,6 +174,12 @@ export function planToMarkdown(plan: Plan, a: PlanAnalysis, fingerprint: string,
     for (const s of industry.standards) out.push(`- ${s.name}: ${s.note}`);
   }
 
+  if (p.radio || p.soldInUk) {
+    out.push("", "**Other regimes that apply now:**", "");
+    if (p.radio) out.push(`- Radio Equipment Directive delegated act (EN 18031), in force since 1 August 2025: ${p.redAssessed ? "assessment completed" : GAP("EN 18031 assessment")}`);
+    if (p.soldInUk) out.push(`- UK PSTI Act 2022 (since 29 April 2024): ${p.pstiStatement ? "statement of compliance prepared" : GAP("PSTI statement of compliance")}`);
+  }
+
   h(2, "10. Evidence register");
   table(
     ["CRA ref.", "Obligation", "Plan section", "Evidence", "Status"],

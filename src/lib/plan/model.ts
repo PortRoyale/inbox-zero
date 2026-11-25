@@ -95,6 +95,9 @@ export type Plan = {
     supportEnd: string;
     supportJustification: string;
     radio: boolean;
+    redAssessed: boolean;
+    soldInUk: boolean;
+    pstiStatement: boolean;
   };
   components: Component[];
   interfaces: Interface[];
@@ -147,6 +150,9 @@ export function emptyPlan(): Plan {
       supportEnd: "",
       supportJustification: "",
       radio: false,
+      redAssessed: false,
+      soldInUk: false,
+      pstiStatement: false,
     },
     components: [],
     interfaces: [],
@@ -213,6 +219,9 @@ export function examplePlan(): Plan {
       marketDate: "2027-09-01",
       supportEnd: "2032-09-01",
       radio: true,
+      redAssessed: true,
+      soldInUk: true,
+      pstiStatement: false,
     },
     components: [
       { id: "c-fw", name: "Thermostat firmware", kind: "firmware", version: "2.4.0", supplier: "In-house", internetFacing: true },

@@ -104,6 +104,27 @@ function buildChecks(plan: Plan, reqs: Requirement[]): Check[] {
     "Art. 32",
   );
 
+  if (p.radio)
+    add(
+      "red-assessed",
+      "product",
+      "gap",
+      !!p.redAssessed,
+      "Radio cybersecurity assessment not confirmed",
+      "Radio products must already meet EN 18031 under the RED delegated act, which has applied since 1 August 2025.",
+      "Reg. (EU) 2022/30",
+    );
+  if (p.soldInUk)
+    add(
+      "psti-statement",
+      "product",
+      "gap",
+      !!p.pstiStatement,
+      "No UK PSTI statement of compliance",
+      "UK sales need no default passwords, a published way to report vulnerabilities, a published minimum update period and a statement of compliance with the product.",
+      "UK PSTI Act 2022",
+    );
+
   add("arch-components", "architecture", "blocker", plan.components.length > 0, "No components listed", "List the firmware, software, cloud and third-party components that make up the product.", "Annex VII 2(a)");
   const unsourced = plan.components.filter((x) => x.kind === "third-party" && !x.supplier.trim());
   if (plan.components.some((x) => x.kind === "third-party")) add("arch-suppliers", "architecture", "gap", unsourced.length === 0, `${unsourced.length} third-party component(s) have no supplier`, "Record the supplier of every third-party component for due diligence.", "Art. 13(5)");

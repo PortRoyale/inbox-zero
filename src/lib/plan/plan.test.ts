@@ -109,3 +109,24 @@ describe("action de-duplication", () => {
     expect(ids).not.toContain("a-req-advisories");
   });
 });
+
+describe("other regimes and generators", () => {
+  it("flags RED and UK PSTI gaps only when they apply", async () => {
+    const { fundingOutline, supplierQuestionnaire } = await import("@/lib/plan/templates");
+    const plan = examplePlan();
+    plan.risks = suggestRisks(plan);
+    const ids = analyzePlan(plan, TODAY).gaps.map((g) => g.id);
+    expect(ids).toContain("psti-statement");
+    expect(ids).not.toContain("red-assessed");
+    plan.product.soldInUk = false;
+    expect(analyzePlan(plan, TODAY).checks.some((c) => c.id === "psti-statement")).toBe(false);
+
+    const q = supplierQuestionnaire(plan);
+    expect(q).toContain("RTOS and Wi-Fi stack");
+    expect(q).toContain("Article 13(5)");
+
+    const out = fundingOutline(plan, analyzePlan(plan, TODAY), { consultingDays: 15, dayRate: 1200, penTest: 12000, platform: 1788, guided: 6000 });
+    expect(out).toContain("Total: €37,788");
+    expect(out).toContain("Co-funding requested at 50%, capped at €30,000: €18,894");
+  });
+});
