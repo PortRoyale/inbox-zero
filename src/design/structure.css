@@ -1,0 +1,590 @@
+/* Structure, not chip clouds.
+   Every group of related items sits in a frame with a header and aligned columns:
+   SpecTable (register), OptionGrid (equal checkbox cells), CheckList (statement rows).
+   Loaded last so it can tighten older components (segmented answers, badges). */
+
+/* ---------- SpecTable ---------- */
+
+.spec {
+  border: var(--lw-wide) solid var(--ink);
+  background: var(--paper);
+  container-type: inline-size;
+}
+
+.spec table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: var(--t-2);
+}
+
+.spec caption {
+  caption-side: top;
+  text-align: left;
+  padding: var(--s-4) var(--s-5);
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border-bottom: var(--lw-thin) solid var(--ink);
+}
+
+.spec thead th {
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--on-ink);
+  background: var(--ink);
+  padding: var(--s-3) var(--s-4);
+}
+
+.spec tbody th,
+.spec tbody td {
+  padding: var(--s-4);
+  text-align: left;
+  vertical-align: top;
+  border-top: var(--lw-thin) solid var(--rule);
+  overflow-wrap: anywhere;
+}
+
+.spec tbody th {
+  font-weight: 700;
+}
+
+.spec tbody td + td,
+.spec tbody th + td,
+.spec tbody td + th {
+  border-left: var(--lw-thin) solid var(--rule);
+}
+
+.spec td.code,
+.spec th.code {
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+}
+
+.spec .spec-no {
+  color: var(--ink-3);
+}
+
+.spec tr.spec-group > th {
+  background: var(--tool-soft, var(--brand-blue-soft));
+  border-top: var(--lw-thin) solid var(--ink);
+  border-left: 4px solid var(--tool, var(--brand-blue));
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: var(--s-3) var(--s-4);
+}
+
+.spec tr.spec-group > th {
+  display: table-cell;
+}
+
+.spec .spec-group-note {
+  float: right;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.spec a {
+  color: inherit;
+}
+
+.spec tbody tr.is-strong > * {
+  background: var(--tool-soft, var(--brand-blue-soft));
+}
+
+/* Phones and narrow containers: each row becomes a labelled block. */
+@container (max-width: 36rem) {
+  .spec table,
+  .spec tbody,
+  .spec tr,
+  .spec th,
+  .spec td {
+    display: block;
+    width: auto;
+  }
+  .spec colgroup,
+  .spec thead {
+    display: none;
+  }
+  .spec tbody tr {
+    border-top: var(--lw-thin) solid var(--ink);
+    padding: var(--s-3) var(--s-4) var(--s-4);
+  }
+  .spec tbody tr:first-child {
+    border-top: 0;
+  }
+  .spec tbody th,
+  .spec tbody td {
+    border: 0 !important;
+    padding: var(--s-1) 0;
+  }
+  .spec tbody [data-label] {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: var(--s-4);
+  }
+  .spec tbody [data-label]::before {
+    content: attr(data-label);
+    font-family: var(--font-code);
+    font-size: var(--t-1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 400;
+    padding-top: 0.15em;
+  }
+  .spec tbody th[scope="row"] {
+    font-size: var(--t-3);
+  }
+  .spec tbody th[scope="row"][data-label] {
+    display: block;
+  }
+  .spec tbody th[scope="row"][data-label]::before {
+    content: none;
+  }
+  .spec tr.spec-group > th {
+    display: block;
+    margin: 0 calc(-1 * var(--s-4));
+    padding: var(--s-3) var(--s-4) !important;
+    border-left: 4px solid var(--tool, var(--brand-blue)) !important;
+  }
+  .spec tbody tr.spec-group {
+    padding: 0 var(--s-4);
+  }
+}
+
+/* ---------- OptionGrid ---------- */
+
+.optgrid {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.optgrid legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-4);
+  width: 100%;
+  padding: 0;
+  margin-bottom: var(--s-3);
+}
+
+.optgrid-count {
+  font-size: var(--t-1);
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.opt-cells {
+  display: grid;
+  grid-template-columns: repeat(var(--opt-cols, 4), minmax(0, 1fr));
+  border: var(--lw-thin) solid var(--ink);
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.opt {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: start;
+  padding: var(--s-4);
+  min-height: 3.25rem;
+  cursor: pointer;
+  box-shadow:
+    var(--lw-thin) 0 0 var(--ink),
+    0 var(--lw-thin) 0 var(--ink);
+  background: var(--paper);
+  transition: background-color 120ms ease;
+}
+
+.opt:hover {
+  background: color-mix(in srgb, var(--tool, var(--brand-blue)) 8%, var(--paper));
+}
+
+.opt.is-on {
+  background: var(--tool-soft, var(--brand-blue-soft));
+}
+
+.opt.is-on::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--tool, var(--brand-blue));
+}
+
+.opt input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0.15rem 0 0;
+  accent-color: var(--tool, var(--brand-blue));
+}
+
+.opt-text {
+  display: grid;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.opt-label {
+  font-size: var(--t-2);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.opt-hint {
+  font-size: var(--t-1);
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.opt:has(input:focus-visible) {
+  outline: 2px solid var(--tool, var(--brand-blue));
+  outline-offset: -4px;
+}
+
+.optgroups {
+  border: var(--lw-thin) solid var(--ink);
+}
+
+.optgroup {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+}
+
+.optgroup + .optgroup {
+  border-top: var(--lw-thin) solid var(--ink);
+}
+
+.optgroup-label {
+  margin: 0;
+  padding: var(--s-4);
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border-right: var(--lw-thin) solid var(--ink);
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+}
+
+.optgroup .opt-cells {
+  border: 0;
+  --opt-cols: 3;
+}
+
+.optgrid-note {
+  margin: var(--s-3) 0 0;
+  font-size: var(--t-1);
+  color: var(--ink-3);
+}
+
+@container (max-width: 44rem) {
+  .opt-cells,
+  .optgroup .opt-cells {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 30rem) {
+  .optgroup {
+    grid-template-columns: 1fr;
+  }
+  .optgroup-label {
+    border-right: 0;
+    border-bottom: var(--lw-thin) solid var(--ink);
+    padding: var(--s-3) var(--s-4);
+  }
+}
+
+@container (max-width: 22rem) {
+  .opt-cells,
+  .optgroup .opt-cells {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- CheckList ---------- */
+
+.checklist {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  container-type: inline-size;
+  --check-cols: 3rem minmax(0, 1fr);
+}
+
+.checklist.has-basis {
+  --check-cols: 3rem minmax(0, 1fr) 11rem;
+}
+
+.checklist > legend {
+  padding: 0;
+  margin-bottom: var(--s-3);
+}
+
+.checklist-head,
+.check-row {
+  display: grid;
+  grid-template-columns: var(--check-cols);
+}
+
+.checklist-head {
+  background: var(--ink);
+  color: var(--on-ink);
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: var(--lw-thin) solid var(--ink);
+}
+
+.checklist-head > span {
+  padding: var(--s-3) var(--s-4);
+}
+
+.checklist-head > span:first-child {
+  padding-inline: 0;
+  text-align: center;
+}
+
+.check-row {
+  position: relative;
+  border: var(--lw-thin) solid var(--ink);
+  border-top: 0;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.check-row > * {
+  padding: var(--s-4);
+}
+
+.check-row input {
+  justify-self: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: var(--s-4) 0 0;
+  padding: 0;
+  accent-color: var(--tool, var(--brand-blue));
+}
+
+.check-row.is-on {
+  background: var(--tool-soft, var(--brand-blue-soft));
+}
+
+.check-row.is-on::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  padding: 0;
+  background: var(--tool, var(--brand-blue));
+}
+
+.check-row:has(input:focus-visible) {
+  outline: 2px solid var(--tool, var(--brand-blue));
+  outline-offset: -4px;
+}
+
+.check-text {
+  display: grid;
+  gap: var(--s-1);
+  border-left: var(--lw-thin) solid var(--rule);
+}
+
+.check-label {
+  font-weight: 600;
+  font-size: var(--t-2);
+  line-height: 1.4;
+}
+
+.check-hint {
+  font-size: var(--t-1);
+  color: var(--ink-3);
+  line-height: 1.45;
+}
+
+.check-basis {
+  font-size: var(--t-1);
+  color: var(--ink-2);
+  border-left: var(--lw-thin) solid var(--rule);
+  letter-spacing: 0.03em;
+}
+
+@container (max-width: 34rem) {
+  .checklist.has-basis {
+    --check-cols: 3rem minmax(0, 1fr);
+  }
+  .checklist-head > span:nth-child(3) {
+    display: none;
+  }
+  .check-basis {
+    grid-column: 2;
+    border-left: var(--lw-thin) solid var(--rule);
+    padding-top: 0;
+  }
+}
+
+/* ---------- Segmented answers: equal compartments, no shift when selected ---------- */
+
+.seg {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  flex-wrap: nowrap;
+}
+
+.seg button {
+  min-width: 0;
+  white-space: nowrap;
+  padding-inline: var(--s-4);
+}
+
+.seg button::before {
+  content: "✓";
+  display: inline-block;
+  width: 1.1em;
+  visibility: hidden;
+}
+
+.seg button[aria-checked="true"]::before {
+  content: "✓";
+  visibility: visible;
+}
+
+/* "Partly": readable label on a soft fill, with the hatch kept as a band so it still differs by shape. */
+.seg button[aria-checked="true"][data-status="partial"] {
+  background:
+    repeating-linear-gradient(-45deg, var(--highlight) 0 4px, transparent 4px 8px) left bottom / 100% 6px no-repeat,
+    color-mix(in srgb, var(--highlight) 28%, var(--paper));
+  color: var(--ink);
+}
+
+/* ---------- Badges: one system, one fixed size per family ----------
+   Every badge in a family has the same width and height whatever its label, so a column of them
+   reads as a column. Widths fit the longest label in the family: CRITICAL/STANDARD/MEDIUM/ADVICE
+   (11.5ch) and NOT REQUIRED (16ch). Borders never change size (box-sizing), only weight via inset. */
+
+.prio,
+.risk-level,
+.issue-sev,
+.outcome-tag {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  width: 11.5ch;
+  height: 1.75rem;
+  margin: 0;
+  padding: 0 var(--s-2);
+  border: var(--lw-thin) solid currentColor;
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  flex: none;
+}
+
+.outcome-tag {
+  width: 16ch;
+  border-color: var(--ink);
+}
+
+.prio-critical {
+  border-width: var(--lw-thin);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.risk-level {
+  border-color: var(--ink);
+}
+
+.risk-high,
+.risk-critical {
+  border-color: var(--redline);
+}
+
+.issue-sev {
+  color: var(--redline);
+}
+
+.issue-advice .issue-sev,
+.issue-sev:where(.is-advice) {
+  color: var(--ink-3);
+}
+
+/* In the risk register the level fills its column at the height of the treatment control beside it. */
+.risk-table .risk-level {
+  width: 100%;
+  height: 2.75rem;
+}
+
+.risk-table select {
+  width: 100%;
+  min-height: 2.75rem;
+}
+
+.risk-table td {
+  vertical-align: top;
+}
+
+/* Stepper and level-map counters: one box size for "✓", "1 open", "0/4" and "2 gaps". */
+.step-state,
+.run-map-meta {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  width: 7.5ch;
+  height: 1.5rem;
+  padding: 0;
+  border: var(--lw-thin) solid var(--rule);
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.step-btn.is-done .step-state,
+.run-map-btn.is-clear .run-map-meta {
+  padding: 0;
+  background: var(--highlight);
+  border-color: var(--highlight);
+  color: var(--highlight-ink);
+  font-weight: 700;
+}
+
+/* Fix register (readiness report): "How to fix" sits on its own line under the requirement. */
+.fix-register .redline-item summary::after {
+  display: block;
+  margin-top: var(--s-2);
+}
+
+.fix-register .redline-id {
+  font-size: var(--t-3);
+}

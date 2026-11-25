@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PageHero } from "@/components/PageHero";
-import { Balloon, ConfirmButton, ContactLine, CopyButton, Fcf, RedPen } from "@/components/primitives";
-import { SheetTabs, type SheetTab } from "@/components/SheetTabs";
+import { ConfirmButton, ContactLine, CopyButton, Fcf } from "@/components/primitives";
+import { OptionGrid, SpecTable } from "@/components/structure";
 import { formatDate, useToday } from "@/components/Timeline";
+import { Walkthrough, type RunChoice, type RunLevel } from "@/components/walkthrough/Walkthrough";
 import { readinessBand, scoreAssessment, type Answers, type AnswerStatus } from "@/lib/assessment-score";
 import { categories, productTypes, requirementsFor, type ProductType, type Requirement } from "@/lib/cra-requirements";
 import { assessmentReportText } from "@/lib/report-text";
@@ -13,12 +14,19 @@ import { PLAN_FROM_ASSESSMENT_KEY } from "@/lib/plan/storage";
 
 const STORAGE_KEY = "cra-assessment-v1";
 
-const statusOptions: { value: AnswerStatus; label: string }[] = [
-  { value: "done", label: "Yes" },
-  { value: "partial", label: "Partly" },
-  { value: "missing", label: "No" },
-  { value: "na", label: "N/A" },
+export const readinessChoices: RunChoice<AnswerStatus>[] = [
+  { value: "done", label: "Yes", hint: "We do this and can show evidence.", keys: ["1", "y"], tone: "good" },
+  { value: "partial", label: "Partly", hint: "Some of it, or not everywhere yet.", keys: ["2", "p"], tone: "partial" },
+  { value: "missing", label: "No", hint: "Not yet. It becomes a fix with guidance.", keys: ["3", "n"], tone: "bad" },
+  { value: "na", label: "N/A", hint: "Does not apply to this product.", keys: ["4", "a"], tone: "neutral" },
 ];
+
+export function readinessFeedback(title: string, priority: string, value: AnswerStatus) {
+  if (value === "done") return "Logged as met. Keep the evidence: an auditor will ask for it.";
+  if (value === "partial") return `Partly met. ${title} joins your fix list at ${priority} priority.`;
+  if (value === "missing") return `Gap logged at ${priority} priority. Your report explains how to close it.`;
+  return "Marked not applicable. Record why in your technical file.";
+}
 
 const SECTION_LETTERS = "ABCDEF";
 
@@ -29,7 +37,7 @@ export function Assessment() {
   const [types, setTypes] = useState<ProductType[]>(["hardware", "firmware"]);
   const [answers, setAnswers] = useState<Answers>({});
   const [loaded, setLoaded] = useState(false);
-  const [step, setStep] = useState(0);
+  const [runKey, setRunKey] = useState(0);
 
   useEffect(() => {
     try {
@@ -58,98 +66,81 @@ export function Assessment() {
   const reqs = useMemo(() => requirementsFor(types), [types]);
   const score = useMemo(() => scoreAssessment(reqs, answers), [reqs, answers]);
   const itemIds = useMemo(() => buildItemIds(reqs), [reqs]);
-
-  const statusCounts = statusOptions.map((o) => ({
-    ...o,
-    count: reqs.filter((r) => answers[r.id] === o.value).length,
-  }));
-
-  const toggleType = (t: ProductType) =>
-    setTypes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  const byId = useMemo(() => Object.fromEntries(reqs.map((r) => [r.id, r])), [reqs]);
 
   const reset = () => {
     setProductName("");
     setTypes([]);
     setAnswers({});
-    setStep(0);
+    try {
+      localStorage.removeItem(`${STORAGE_KEY}:pos`);
+    } catch {
+      // Storage is optional.
+    }
+    setRunKey((k) => k + 1);
   };
 
-  const sections = categories
-    .map((cat, ci) => ({ cat, letter: SECTION_LETTERS[ci], items: reqs.filter((r) => r.category === cat.id) }))
-    .filter((x) => x.items.length > 0);
+  const levels: RunLevel[] = categories
+    .map((cat) => ({
+      id: cat.id,
+      label: cat.label,
+      questions: reqs
+        .filter((r) => r.category === cat.id)
+        .map((r) => ({
+          id: r.id,
+          ref: itemIds[r.id],
+          title: r.title,
+          prompt: r.question,
+          detail: <p>{r.guidance}</p>,
+          basis: `CRA ${r.craRef}`,
+          tag: { label: r.priority, tone: r.priority as "critical" | "high" | "standard" },
+        })),
+    }))
+    .filter((l) => l.questions.length > 0);
 
-  const steps: SheetTab[] = [
-    {
-      id: "product",
-      label: "Your product",
-      state: types.length ? "done" : "open",
-      content: (
-        <div className="setup">
-          <h2>What are you assessing?</h2>
-          <label className="field" htmlFor="product-name">
-            <span className="label">Product name (optional)</span>
-            <input id="product-name" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="e.g. Smart thermostat v2" />
-          </label>
-          <fieldset className="types">
-            <legend className="label">What does it include? Select all that apply.</legend>
-            <div className="types-grid">
-              {productTypes.map((t) => {
-                const checked = types.includes(t.id);
-                return (
-                  <label key={t.id} className={`type-option${checked ? " is-checked" : ""}`} htmlFor={`type-${t.id}`}>
-                    <input id={`type-${t.id}`} type="checkbox" checked={checked} onChange={() => toggleType(t.id)} />
-                    <span>
-                      <strong>{t.label}</strong>
-                      <span className="muted">{t.hint}</span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
-          {types.length === 0 && <p className="note-line">Select at least one type. The questions are filtered to what your product includes.</p>}
-        </div>
-      ),
-    },
-    ...sections.map(({ cat, letter, items }) => {
-      const answered = items.filter((r) => answers[r.id]).length;
-      return {
-        id: cat.id,
-        label: cat.label,
-        state: answered === items.length ? ("done" as const) : ("open" as const),
-        badge: answered === items.length ? undefined : `${answered}/${items.length}`,
-        content: (
-          <section className="insp-section" aria-labelledby={`sec-${cat.id}`}>
-            <div className="insp-section-head">
-              <Fcf keyCell={`Section ${letter}`} cells={[`${items.length} items`]} />
-              <h2 id={`sec-${cat.id}`}>{cat.label}</h2>
-            </div>
-            <ol className="insp-list">
-              {items.map((r) => (
-                <InspectionItem
-                  key={r.id}
-                  req={r}
-                  itemId={itemIds[r.id]}
-                  value={answers[r.id]}
-                  onChange={(st) => setAnswers((prev) => ({ ...prev, [r.id]: st }))}
-                />
-              ))}
-            </ol>
-          </section>
-        ),
-      };
-    }),
-    {
-      id: "report",
-      label: "Your report",
-      content:
-        score.answeredCount > 0 ? (
-          <Report productName={productName} types={types} score={score} itemIds={itemIds} answers={answers} />
-        ) : (
-          <p className="note-line">Answer at least one item to see your report.</p>
-        ),
-    },
-  ];
+  const gaps = score.gaps.length;
+
+  const intro = (
+    <div className="run-setup">
+      <div className="run-setup-head">
+        <Fcf keyCell="Level 0" cells={["Your product"]} />
+        <h2>What are you checking?</h2>
+        <p className="muted">Pick what the product includes. The questions adapt: {reqs.length} apply right now.</p>
+      </div>
+      <label className="field" htmlFor="product-name">
+        <span className="label">Product name (optional)</span>
+        <input id="product-name" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="e.g. Smart thermostat v2" />
+      </label>
+      <OptionGrid
+        id="type"
+        legend="What does it include?"
+        required
+        options={productTypes.map((t) => ({ value: t.id, label: t.label, hint: t.hint }))}
+        selected={types}
+        onChange={(next) => setTypes(next as ProductType[])}
+        note={types.length === 0 ? "Select at least one to start." : undefined}
+      />
+      {levels.length > 0 && (
+        <SpecTable
+          caption="Your route"
+          rows={levels}
+          rowKey={(l) => l.id}
+          cols={[
+            { key: "lvl", label: "Level", width: "5rem", code: true, render: (_l, i) => String(i + 1) },
+            { key: "name", label: "Section", head: true, render: (l) => l.label },
+            { key: "n", label: "Questions", width: "7rem", code: true, render: (l) => l.questions.length },
+            {
+              key: "done",
+              label: "Answered",
+              width: "7rem",
+              code: true,
+              render: (l) => `${l.questions.filter((q) => answers[q.id] !== undefined).length}/${l.questions.length}`,
+            },
+          ]}
+        />
+      )}
+    </div>
+  );
 
   return (
     <div className="wrap stack" data-tool="readiness">
@@ -159,95 +150,62 @@ export function Assessment() {
         motif="gauge"
         seed={17}
         label="Free tool"
-        cells={["Inspection sheet", "Annex I"]}
+        cells={["Inspection run", "Annex I"]}
         title="CRA readiness check"
-        lead="Answer honestly; “Partly” is a perfectly good answer. Your answers stay in this browser and never leave your device."
+        lead="One question at a time, about ten minutes. “Partly” is a perfectly good answer. Your answers stay in this browser."
       />
-      <SheetTabs
-        label="Readiness check steps"
-        wizard
-        items={steps}
-        value={step}
-        onValueChange={setStep}
-        side={
-          <div className="sheet status-panel">
-            <p className="label">Inspection status</p>
-            <p className="status-count code">
-              {score.answeredCount}
-              <span className="muted"> / {score.total}</span>
-            </p>
-            <div className="gauge" role="progressbar" aria-valuemin={0} aria-valuemax={score.total} aria-valuenow={score.answeredCount} aria-label="Items answered">
-              <span style={{ width: `${score.total ? (score.answeredCount / score.total) * 100 : 0}%` }} />
-            </div>
-            <dl className="status-tally">
-              {statusCounts.map((sc) => (
-                <div key={sc.value}>
-                  <dt>
-                    <span className={`swatch swatch-${sc.value}`} aria-hidden="true" />
-                    {sc.label}
-                  </dt>
-                  <dd className="code">{sc.count}</dd>
-                </div>
-              ))}
-            </dl>
-            <button type="button" className="btn btn-primary" onClick={() => setStep(steps.length - 1)} disabled={score.answeredCount === 0}>
-              {score.complete ? "See my report" : "See report so far"}
-            </button>
+      <Walkthrough<AnswerStatus>
+        key={runKey}
+        id="readiness-run"
+        name="Readiness check"
+        storageKey={STORAGE_KEY}
+        levels={levels}
+        choices={readinessChoices}
+        answers={answers}
+        onAnswer={(id, v) => setAnswers((prev) => ({ ...prev, [id]: v }))}
+        feedback={(q, v) => readinessFeedback(q.title, byId[q.id]?.priority ?? "standard", v)}
+        intro={intro}
+        canStart={types.length > 0}
+        startLabel={`Start the check · ${reqs.length} questions`}
+        stats={[
+          { label: "Gaps", value: gaps, tone: gaps ? "bad" : undefined },
+          { label: "Time left", value: score.total - score.answeredCount ? `~${Math.max(1, Math.round(((score.total - score.answeredCount) * 18) / 60))} min` : "Done" },
+        ]}
+        levelSummary={(li) => {
+          const cat = score.byCategory.find((c) => c.id === levels[li].id);
+          const levelGaps = score.gaps.filter((g) => g.category === levels[li].id);
+          return (
+            <SpecTable
+              rows={[0]}
+              rowKey={() => "s"}
+              cols={[
+                { key: "score", label: "Level score", width: "9rem", code: true, render: () => (cat ? `${cat.percent}%` : "N/A") },
+                {
+                  key: "bar",
+                  label: "Readiness",
+                  bare: true,
+                  render: () => (
+                    <span className="gauge" role="img" aria-label={`${cat?.percent ?? 0}%`}>
+                      <span style={{ width: `${cat?.percent ?? 0}%` }} />
+                    </span>
+                  ),
+                },
+                { key: "gaps", label: "Gaps", width: "6rem", code: true, render: () => levelGaps.length },
+                { key: "crit", label: "Critical", width: "6rem", code: true, render: () => levelGaps.filter((g) => g.priority === "critical").length },
+              ]}
+            />
+          );
+        }}
+        outroLabel="See my report"
+        outroMeta={score.answeredCount ? `${score.percent}%` : "0%"}
+        outro={<Report productName={productName} types={types} score={score} itemIds={itemIds} answers={answers} />}
+        aside={
+          <div className="run-aside">
             <ConfirmButton label="Start over" confirmLabel="Clear all answers" onConfirm={reset} />
           </div>
         }
       />
     </div>
-  );
-}
-
-function InspectionItem({
-  req,
-  itemId,
-  value,
-  onChange,
-}: {
-  req: Requirement;
-  itemId: string;
-  value: AnswerStatus | undefined;
-  onChange: (s: AnswerStatus) => void;
-}) {
-  const titleId = `item-${req.id}`;
-  return (
-    <li className={`insp-item${value ? ` is-${value}` : ""}`}>
-      <Balloon>{itemId}</Balloon>
-      <div className="insp-body">
-        <div className="insp-title-row">
-          <h3 id={titleId}>
-            <span className={`mark${value && value !== "missing" ? ` mark-${value}` : ""}`}>
-              {req.title}
-              {value === "missing" && <RedPen />}
-            </span>
-          </h3>
-          <span className={`prio prio-${req.priority}`}>{req.priority}</span>
-        </div>
-        <p className="insp-q">{req.question}</p>
-        <details className="insp-more">
-          <summary>What good looks like</summary>
-          <p>{req.guidance}</p>
-          <p className="code muted">CRA ref. {req.craRef}</p>
-        </details>
-        <div className="seg" role="radiogroup" aria-labelledby={titleId}>
-          {statusOptions.map((o) => (
-            <button
-              key={o.value}
-              type="button"
-              role="radio"
-              data-status={o.value}
-              aria-checked={value === o.value}
-              onClick={() => onChange(o.value)}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    </li>
   );
 }
 
@@ -347,22 +305,33 @@ function Report({
         {score.gaps.length === 0 ? (
           <p>No gaps among the items you answered. Keep the evidence on file.</p>
         ) : (
-          <ol>
-            {score.gaps.map((g) => (
-              <li key={g.id}>
-                <span className="redline-id code">{itemIds[g.id]}</span>
-                <details className="redline-item">
-                  <summary>
-                    <span className="redline-title">
-                      {g.title} <span className={`prio prio-${g.priority}`}>{g.priority}</span>
-                      <span className="code muted redline-ref">{g.craRef}</span>
-                    </span>
-                  </summary>
-                  <p>{g.guidance}</p>
-                </details>
-              </li>
-            ))}
-          </ol>
+          <SpecTable
+            className="fix-register"
+            rows={score.gaps}
+            rowKey={(g) => g.id}
+            cols={[
+              { key: "ref", label: "Ref", width: "4.5rem", code: true, render: (g) => <span className="redline-id">{itemIds[g.id]}</span> },
+              {
+                key: "req",
+                label: "Requirement",
+                head: true,
+                render: (g) => (
+                  <details className="redline-item">
+                    <summary>{g.title}</summary>
+                    <p>{g.guidance}</p>
+                  </details>
+                ),
+              },
+              {
+                key: "ans",
+                label: "Answer",
+                width: "8.5rem",
+                render: (g) => <span className={`run-answer-chip is-${answers[g.id] === "partial" ? "partial" : "bad"}`}>{answers[g.id] === "partial" ? "Partly" : "No"}</span>,
+              },
+              { key: "prio", label: "Priority", width: "8.5rem", render: (g) => <span className={`prio prio-${g.priority}`}>{g.priority}</span> },
+              { key: "ref2", label: "Basis", width: "13rem", code: true, render: (g) => g.craRef },
+            ]}
+          />
         )}
       </div>
 
