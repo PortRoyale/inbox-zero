@@ -1,0 +1,387 @@
+/* Flair: motion and depth layered on the Checkprint system. All of it switches off under reduced motion. */
+
+/* Stacked drawing set: every top-level sheet has a second sheet behind it */
+.sheet {
+  box-shadow:
+    6px 6px 0 -1px var(--paper),
+    6px 6px 0 0 var(--ink);
+}
+
+.sheet .sheet,
+.tab-side .sheet {
+  box-shadow: 4px 4px 0 -1px var(--paper), 4px 4px 0 0 var(--ink);
+}
+
+.stepper.sheet {
+  box-shadow: none;
+}
+
+/* Tactile buttons: lift on hover, press on click */
+.btn {
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.btn:not(.btn-quiet):not(:disabled):hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.btn-primary:not(:disabled):hover {
+  box-shadow: 3px 3px 0 var(--nonphoto);
+}
+
+.btn:not(:disabled):active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+.seg button,
+.chip,
+.cat-pill,
+.step-btn {
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+/* Plotter draw-in for hero line work */
+.bd-traces path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: plot-in 1.4s cubic-bezier(0.4, 0.1, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+.bd-motif > * {
+  animation: fade-in 700ms ease-out 300ms both;
+}
+
+@keyframes plot-in {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.15;
+  }
+}
+
+/* Tab and step panels arrive like a new sheet */
+.tab-panel:not([hidden]),
+.step-body > .stack-sm,
+.step-body > .form-grid {
+  animation: sheet-in 260ms ease-out both;
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0.35;
+    transform: translateY(6px);
+  }
+}
+
+/* Home hero: exploded view */
+.page-hero-grid.is-wide-aside {
+  align-items: center;
+}
+
+@media (min-width: 60rem) {
+  .page-hero-grid.is-wide-aside:has(.page-hero-aside) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 27rem);
+  }
+}
+
+.xv {
+  margin: 0;
+  display: grid;
+  gap: var(--s-4);
+}
+
+.xv-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.xv-centre {
+  stroke: var(--ink-3);
+  stroke-width: 0.8;
+  stroke-dasharray: 14 4 2 4;
+}
+
+.xv-layer {
+  animation: explode 1.2s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+  animation-delay: var(--delay, 0.25s);
+  cursor: default;
+}
+
+@keyframes explode {
+  from {
+    transform: translateY(var(--from, 0));
+  }
+}
+
+.xv-top {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  transition: fill 160ms ease;
+}
+
+.xv-side-l {
+  fill: color-mix(in srgb, var(--ink) 10%, var(--paper));
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+
+.xv-side-r {
+  fill: color-mix(in srgb, var(--ink) 22%, var(--paper));
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+
+.xv-layer.is-hot .xv-top {
+  fill: var(--highlight);
+}
+
+.xv-screen {
+  fill: color-mix(in srgb, var(--nonphoto) 25%, var(--paper));
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.xv-chip {
+  fill: var(--ink);
+  stroke: var(--ink);
+}
+
+.xv-edge,
+.xv-trace {
+  stroke: var(--ink);
+  stroke-width: 1;
+  fill: none;
+}
+
+.xv-trace {
+  stroke: var(--nonphoto);
+  stroke-width: 1.6;
+}
+
+.xv-antenna {
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.xv-port {
+  fill: var(--ink);
+}
+
+.xv-leader {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 1;
+}
+
+.xv-dot {
+  fill: var(--ink);
+}
+
+.xv-balloon {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.xv-layer.is-hot .xv-balloon {
+  fill: var(--highlight);
+}
+
+.xv-num {
+  font-family: var(--font-code);
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.xv-callout {
+  animation: fade-in 500ms ease-out 1.2s both;
+}
+
+.xv-cloud path:first-child {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.xv-cloud text {
+  font-family: var(--font-code);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  fill: var(--ink-2);
+}
+
+.xv-link {
+  fill: none;
+  stroke: var(--nonphoto);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 4;
+  animation: radio 1.6s linear infinite;
+}
+
+@keyframes radio {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+.xv-legend {
+  display: grid;
+  gap: 0;
+  border-top: var(--lw-thin) solid var(--ink);
+}
+
+.xv-legend li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-2) 0;
+  border-bottom: var(--lw-thin) solid var(--rule);
+  font-size: var(--t-2);
+  line-height: 1.3;
+}
+
+.xv-legend li.is-hot strong {
+  background: var(--highlight);
+  color: var(--highlight-ink);
+}
+
+.xv-legend .balloon {
+  font-size: var(--t-1);
+}
+
+.xv-part {
+  display: block;
+  color: var(--ink-3);
+  font-size: var(--t-1);
+}
+
+.fact-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: var(--lw-thin) solid var(--ink);
+  margin-top: var(--s-3);
+  max-width: 40rem;
+  background: var(--paper);
+}
+
+.fact-strip > div {
+  padding: var(--s-3) var(--s-4);
+  border-right: var(--lw-thin) solid var(--ink);
+  min-width: 0;
+}
+
+.fact-strip > div:last-child {
+  border-right: 0;
+}
+
+.fact-strip dt {
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.fact-strip dd {
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+}
+
+@media (max-width: 40rem) {
+  .fact-strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fact-strip > div {
+    border-right: 0;
+    border-bottom: var(--lw-thin) solid var(--ink);
+  }
+  .fact-strip > div:last-child {
+    border-bottom: 0;
+  }
+}
+
+/* CAD crosshair */
+.crosshair {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  overflow: hidden;
+}
+
+.ch-v,
+.ch-h {
+  position: absolute;
+  background: var(--nonphoto);
+  opacity: 0.55;
+}
+
+.ch-v {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.ch-h {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.ch-read {
+  position: absolute;
+  padding: 1px var(--s-2);
+  background: var(--paper);
+  border: var(--lw-thin) solid var(--nonphoto);
+  color: var(--nonphoto);
+  font-size: var(--t-1);
+  white-space: nowrap;
+}
+
+/* Approval stamp */
+.stamp {
+  align-self: flex-start;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--s-2) var(--s-5);
+  border: 3px double var(--redline);
+  color: var(--redline);
+  font-family: var(--font-code);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transform: rotate(-4deg);
+  animation: stamp 380ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+.stamp small {
+  font-size: var(--t-1);
+  letter-spacing: 0.08em;
+}
+
+@keyframes stamp {
+  from {
+    transform: rotate(-4deg) scale(1.8);
+    opacity: 0;
+  }
+}

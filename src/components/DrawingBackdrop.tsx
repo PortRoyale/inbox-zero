@@ -13,8 +13,8 @@ export function DrawingBackdrop({ motif, seed = 7 }: { motif: Motif; seed?: numb
     <svg className="backdrop" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMaxYMid slice" aria-hidden="true" focusable="false">
       <g className="bd-traces">
         {traces(rand).map((t, i) => (
-          <g key={i}>
-            <path d={t.d} />
+          <g key={i} style={{ ["--i" as string]: i }}>
+            <path d={t.d} pathLength={1} />
             <rect x={t.start[0] - 3} y={t.start[1] - 3} width="6" height="6" />
             <circle cx={t.end[0]} cy={t.end[1]} r="3.2" />
           </g>

@@ -16,6 +16,11 @@ Our buyers make hardware, firmware and software products. Their native documents
 | Dimension line | Dimensioning | The timeline's day count, drawn to scale |
 | Title block, revision table, general notes | Sheet furniture | Footer, changelog, FAQ |
 | CAD grips (`.btn:hover`) | Selected object handles | Hover and focus on buttons |
+| Stacked sheets (`.sheet` offset outline) | A drawing set | Depth on every section |
+| Exploded view (`ExplodedView`) | Assembly drawing with item balloons | Home hero: each part mapped to a CRA requirement |
+| Crosshair with zone and mm readout (`HeroCrosshair`) | CAD cursor and sheet zones | Home hero, fine pointers only |
+| Double-ruled stamp (`.stamp`) | Approval stamp on a released drawing | Issued plan revision |
+| Plotter draw-in (`.bd-traces`) | Pen plotter | Hero line work on load |
 
 **Themes.** Light is a plotted sheet. Dark is CAD model space. Both are defined as tokens in `src/design/system.css`.
 
@@ -23,9 +28,16 @@ Our buyers make hardware, firmware and software products. Their native documents
 
 **Type.** B612 (designed for Airbus cockpit displays) is used for h1/h2 only. Atkinson Hyperlegible Next and Mono (Braille Institute) handle text and codes.
 
+**Layout rules**
+
+- Every page opens with the same hero (`PageHero`): sheet label, title, lead, optional facts or art, and a generated drawing backdrop that never sits behind text.
+- Anything longer than about three screens is split into numbered steps (sequential tasks) or tabs (reference content) with `SheetTabs`. Side panels sit under the step index on desktop and after the content on phones.
+
 **Rules learned by testing**
 
 - B612 draws `(` like `[`, so it never sets citations or body text.
 - Non-photo blue is invisible by design (2.95:1). The token is darkened to 5.4:1 for text and focus rings.
 - The highlighter is only 1.3:1 against paper, so state never relies on it alone: selected answers also get a ✓ and an ink rule.
 - Status always has a text label. Yellow means *verified*, which is a drafting convention most users won't know.
+- B612 only sets page titles; any parentheses in a title are set in the text face.
+- All motion stops under `prefers-reduced-motion`.

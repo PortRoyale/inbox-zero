@@ -1,3 +1,4 @@
+import { ExplodedView } from "@/components/ExplodedView";
 import { PageHero } from "@/components/PageHero";
 import { Balloon, Fcf } from "@/components/primitives";
 import { Timeline } from "@/components/Timeline";
@@ -51,8 +52,12 @@ export function Home() {
             </a>
           </>
         }
-        aside={
-          <dl className="tblock">
+        backdrop={false}
+        crosshair
+        wideAside
+        aside={<ExplodedView />}
+        extra={
+          <dl className="fact-strip">
             <div>
               <dt>Max. penalty</dt>
               <dd>€15M or 2.5% of turnover</dd>

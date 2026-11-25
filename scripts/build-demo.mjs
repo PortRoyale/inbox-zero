@@ -28,7 +28,7 @@ const { outputFiles } = await build({
 
 if (/\bprocess\.env\b/.test(outputFiles[0].text)) throw new Error("Unresolved process.env reference in demo bundle; add it to define.");
 const js = outputFiles[0].text.replaceAll("</script", "<\\/script");
-const css = ["system.css", "pages.css", "plan.css"].map((f) => readFileSync(`${root}/src/design/${f}`, "utf8")).join("\n");
+const css = ["system.css", "pages.css", "plan.css", "flair.css"].map((f) => readFileSync(`${root}/src/design/${f}`, "utf8")).join("\n");
 
 const html = `<title>Readyline CRA Readiness</title>
 <meta name="claude:viewport-fit-sides" content="cover">

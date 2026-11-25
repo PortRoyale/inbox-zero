@@ -1018,6 +1018,14 @@ function ReviewStep({
       </div>
       <div className="issue-rev">
         <Fcf keyCell="Issue revision" cells={[nextRevisionLetter(plan.revisions), changed ? "Edited since last issue" : latest ? `Matches Rev ${latest.rev}` : "First issue"]} />
+        {latest && !changed && (
+          <p className="stamp" key={latest.hash}>
+            Approved · Rev {latest.rev}
+            <small>
+              {latest.date} · {latest.approver || "Unsigned"}
+            </small>
+          </p>
+        )}
         <p className="muted">
           Issuing a revision records the date, approver and a SHA-256 fingerprint of the plan's content. Any later edit changes the
           fingerprint, so an auditor can tell whether the document matches what was approved.

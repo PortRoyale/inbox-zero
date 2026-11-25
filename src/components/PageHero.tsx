@@ -1,4 +1,5 @@
 import { DrawingBackdrop, type Motif } from "@/components/DrawingBackdrop";
+import { HeroCrosshair } from "@/components/HeroCrosshair";
 import { Fcf } from "@/components/primitives";
 
 export function PageHero({
@@ -14,6 +15,10 @@ export function PageHero({
   above,
   children,
   level = 1,
+  backdrop = true,
+  crosshair = false,
+  extra,
+  wideAside = false,
 }: {
   id: string;
   motif: Motif;
@@ -27,12 +32,17 @@ export function PageHero({
   above?: React.ReactNode;
   children?: React.ReactNode;
   level?: 1 | 2;
+  backdrop?: boolean;
+  crosshair?: boolean;
+  extra?: React.ReactNode;
+  wideAside?: boolean;
 }) {
   const H = level === 1 ? "h1" : "h2";
   return (
     <section className="sheet page-hero" aria-labelledby={id}>
-      <div className="page-hero-grid">
-        <DrawingBackdrop motif={motif} seed={seed} />
+      {crosshair && <HeroCrosshair />}
+      <div className={`page-hero-grid${wideAside ? " is-wide-aside" : ""}`}>
+        {backdrop && <DrawingBackdrop motif={motif} seed={seed} />}
         <div className="page-hero-body">
           {above}
           <Fcf keyCell={label} cells={cells} />
@@ -41,6 +51,7 @@ export function PageHero({
           </H>
           {lead && <div className="lead">{lead}</div>}
           {actions && <div className="row">{actions}</div>}
+          {extra}
         </div>
         {aside && <div className="page-hero-aside">{aside}</div>}
       </div>

@@ -7,6 +7,7 @@ import { site } from "@/lib/site";
 import "@/design/system.css";
 import "@/design/pages.css";
 import "@/design/plan.css";
+import "@/design/flair.css";
 
 const display = B612({ weight: "700", subsets: ["latin"], variable: "--ff-display", display: "swap" });
 const text = Atkinson_Hyperlegible_Next({ subsets: ["latin", "latin-ext"], variable: "--ff-text", display: "swap" });
