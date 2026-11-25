@@ -23,6 +23,9 @@ export type RunQuestion = {
   detail?: React.ReactNode;
   tag?: { label: string; tone: "critical" | "high" | "standard" };
   basis?: string;
+  /** Per-question overrides: the same answer can be good on one question and a trigger on another. */
+  choiceTones?: Partial<Record<string, Tone>>;
+  choiceHints?: Partial<Record<string, string>>;
 };
 
 export type RunLevel = { id: string; label: string; blurb?: string; questions: RunQuestion[] };
@@ -59,7 +62,7 @@ export function Walkthrough<V extends string>({
   answers: Partial<Record<string, V>>;
   onAnswer: (questionId: string, value: V) => void;
   feedback?: (q: RunQuestion, value: V) => string;
-  followUp?: (q: RunQuestion, value: V) => React.ReactNode | null;
+  followUp?: (q: RunQuestion, value: V, next: () => void) => React.ReactNode | null;
   intro?: React.ReactNode;
   canStart?: boolean;
   startLabel?: string;
@@ -72,7 +75,15 @@ export function Walkthrough<V extends string>({
   storageKey?: string;
   compact?: boolean;
 }) {
-  const [pos, setPos] = useState<Pos>(intro ? { phase: "intro" } : { phase: "q", level: 0, index: 0 });
+  const [pos, setPos] = useState<Pos>(() => {
+    if (intro) return { phase: "intro" };
+    // Without a start screen, open on the first unanswered question.
+    for (let li = 0; li < levels.length; li++) {
+      const qi = levels[li].questions.findIndex((q) => answers[q.id] === undefined);
+      if (qi >= 0) return { phase: "q", level: li, index: qi };
+    }
+    return levels.length ? { phase: "done" } : { phase: "intro" };
+  });
   const [dir, setDir] = useState<"fwd" | "back">("fwd");
   const [pending, setPending] = useState<{ qid: string; value: V } | null>(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -158,7 +169,8 @@ export function Walkthrough<V extends string>({
   }, [go, intro, levels, pos]);
 
   const current = pos.phase === "q" ? levels[pos.level]?.questions[pos.index] : undefined;
-  const follow = current && pending && followUp ? followUp(current, pending.value) : current && answers[current.id] && followUp ? followUp(current, answers[current.id] as V) : null;
+  const shownValue = current ? (pending?.qid === current.id ? pending.value : (answers[current.id] as V | undefined)) : undefined;
+  const follow = current && shownValue !== undefined && followUp ? followUp(current, shownValue, advance) : null;
 
   const answer = useCallback(
     (value: V) => {
@@ -168,7 +180,7 @@ export function Walkthrough<V extends string>({
       const msg = feedback?.(current, value) ?? "";
       if (live.current) live.current.textContent = msg;
       clearTimer();
-      const needsMore = followUp?.(current, value);
+      const needsMore = followUp?.(current, value, advance);
       if (!needsMore) {
         const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
         timer.current = setTimeout(advance, reduce ? 900 : 650);
@@ -219,6 +231,10 @@ export function Walkthrough<V extends string>({
   const remaining = total - answered;
   const minutes = Math.max(1, Math.round((remaining * SECONDS_PER_QUESTION) / 60));
   const choiceOf = (v: V | undefined) => choices.find((c) => c.value === v);
+  const toneOf = (q: RunQuestion, v: V | undefined): Tone | undefined => {
+    const c = choiceOf(v);
+    return c ? (q.choiceTones?.[c.value] ?? c.tone) : undefined;
+  };
 
   const firstOpen = (li: number) => {
     const qi = levels[li].questions.findIndex((q) => answers[q.id] === undefined);
@@ -299,10 +315,11 @@ export function Walkthrough<V extends string>({
               {flat.map((f, i) => {
                 const v = answers[f.q.id];
                 const c = choiceOf(v);
+                const tone = toneOf(f.q, v);
                 return (
                   <li
                     key={f.q.id}
-                    className={`${c ? `is-${c.tone}` : ""}${i === flatIndex ? " is-here" : ""}${i > 0 && flat[i - 1].li !== f.li ? " is-break" : ""}`}
+                    className={`${tone ? `is-${tone}` : ""}${i === flatIndex ? " is-here" : ""}${i > 0 && flat[i - 1].li !== f.li ? " is-break" : ""}`}
                   >
                     <button
                       type="button"
@@ -354,13 +371,16 @@ export function Walkthrough<V extends string>({
                 {current.ref}
               </span>
               <p className="run-q-meta code">
-                <span className="run-q-ref">{current.ref}</span> Question {flatIndex + 1} of {total}
+                <span className="run-q-ref">{current.ref}</span>
+                <span>
+                  Question {flatIndex + 1} of {total}
+                </span>
                 {current.tag && <span className={`prio prio-${current.tag.tone}`}>{current.tag.label}</span>}
               </p>
+              <p className="run-q-kicker">{current.title}</p>
               <h2 ref={headRef} tabIndex={-1} className="run-q-title" id={`${id}-q`}>
-                {current.title}
+                {current.prompt}
               </h2>
-              <p className="run-q-prompt">{current.prompt}</p>
               {current.detail && (
                 <div className="run-detail">
                   <button type="button" className="run-detail-btn" aria-expanded={showDetail} onClick={() => setShowDetail((x) => !x)}>
@@ -379,20 +399,21 @@ export function Walkthrough<V extends string>({
             <div className="run-choices" role="radiogroup" aria-labelledby={`${id}-q`} style={{ ["--choices" as string]: choices.length }}>
               {choices.map((c) => {
                 const on = answers[current.id] === c.value;
+                const tone = current.choiceTones?.[c.value] ?? c.tone;
                 return (
                   <button
                     key={c.value}
                     type="button"
                     role="radio"
                     aria-checked={on}
-                    className={`run-choice is-${c.tone}${on ? " is-on" : ""}${pending?.value === c.value && pending.qid === current.id ? " is-pop" : ""}`}
+                    className={`run-choice is-${tone}${on ? " is-on" : ""}${pending?.value === c.value && pending.qid === current.id ? " is-pop" : ""}`}
                     onClick={() => answer(c.value)}
                   >
                     <span className="key" aria-hidden="true">
                       {c.keys[0].toUpperCase()}
                     </span>
                     <span className="run-choice-label">{c.label}</span>
-                    <span className="run-choice-hint">{c.hint}</span>
+                    <span className="run-choice-hint">{current.choiceHints?.[c.value] ?? c.hint}</span>
                   </button>
                 );
               })}
@@ -490,6 +511,7 @@ export function Walkthrough<V extends string>({
                     </tr>
                     {l.questions.map((q, qi) => {
                       const c = choiceOf(answers[q.id]);
+                      const tone = toneOf(q, answers[q.id]);
                       return (
                         <tr key={q.id}>
                           <td className="code" data-label="Ref">
@@ -499,7 +521,7 @@ export function Walkthrough<V extends string>({
                             {q.title}
                           </th>
                           <td data-label="Answer">
-                            <button type="button" className={`run-answer-chip is-${c?.tone ?? "open"}`} onClick={() => go({ phase: "q", level: li, index: qi }, "back")}>
+                            <button type="button" className={`run-answer-chip is-${tone ?? "open"}`} onClick={() => go({ phase: "q", level: li, index: qi }, "back")}>
                               {c ? c.label : "Skipped"}
                             </button>
                           </td>

@@ -41,6 +41,35 @@ export const practiceOptions = [
   "Security training for developers",
 ] as const;
 
+// Grouped for display: options sit in labelled rows of equal cells, never a loose chip row.
+export const interfaceGroups: { label: string; options: Interface[] }[] = [
+  { label: "Radio", options: ["Wi-Fi", "Bluetooth", "Cellular", "Zigbee / Thread / Matter", "NFC"] },
+  { label: "Wired and physical", options: ["Ethernet", "USB", "Debug port (JTAG / UART)"] },
+  { label: "Software interfaces", options: ["Local web UI", "Local API", "Mobile app", "Cloud API", "Over-the-air updates"] },
+];
+
+export const dataGroups: { label: string; options: DataKind[] }[] = [
+  { label: "About people", options: ["User credentials", "Personal data", "Location", "Audio or video", "Health data", "Payment data"] },
+  { label: "About the device", options: ["Device telemetry", "Configuration and keys"] },
+];
+
+export const practiceGroups: { label: string; options: Practice[] }[] = [
+  { label: "Design", options: ["Threat modelling for new features", "Security training for developers"] },
+  { label: "Code", options: ["Peer code review for every change", "Static analysis (SAST) in CI", "Secret scanning"] },
+  { label: "Supply chain and build", options: ["Dependency scanning (SCA) in CI", "Signed builds and releases", "Reproducible or controlled build environment"] },
+];
+
+export const practiceHints: Record<Practice, string> = {
+  "Threat modelling for new features": "Before building anything that changes the attack surface.",
+  "Security training for developers": "At least yearly, for your languages and stack.",
+  "Peer code review for every change": "A second person approves every merge.",
+  "Static analysis (SAST) in CI": "Runs on every pull request.",
+  "Secret scanning": "Blocks keys and passwords in commits.",
+  "Dependency scanning (SCA) in CI": "Flags known-vulnerable components.",
+  "Signed builds and releases": "Artefacts carry a verifiable signature.",
+  "Reproducible or controlled build environment": "Builds run in a locked, audited environment.",
+};
+
 export const euMemberStates = [
   "Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany",
   "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland",

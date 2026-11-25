@@ -342,7 +342,6 @@
 }
 
 .run-q-head > :not(.run-ref) {
-  max-width: 46rem;
   position: relative;
 }
 
@@ -371,24 +370,25 @@
   color: var(--ink-3);
 }
 
+.run-q-kicker {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--t-3);
+  color: var(--ink-2);
+  padding-left: var(--s-4);
+  border-left: 4px solid var(--run-accent);
+}
+
 .run-q-title {
   margin: 0;
   font-family: var(--font-text);
   font-weight: 800;
-  font-size: clamp(var(--t-5), 3.4cqi, var(--t-6));
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  max-width: 24ch;
+  font-size: clamp(var(--t-5), 3.1cqi, 1.85rem);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  max-width: 34ch;
   text-wrap: balance;
-}
-
-.run-q-prompt {
-  margin: 0;
-  font-size: clamp(var(--t-3), 2.2cqi, var(--t-4));
-  line-height: 1.55;
-  color: var(--ink-2);
-  max-width: 52ch;
-  text-wrap: pretty;
+  color: var(--ink);
 }
 
 .run-detail-btn {
@@ -413,12 +413,12 @@
   padding: var(--s-4) var(--s-5);
   border-left: 4px solid var(--run-accent);
   background: var(--tool-soft, var(--brand-blue-soft));
-  max-width: 60ch;
   animation: run-in-fwd 200ms ease-out both;
 }
 
 .run-detail-body p {
   margin: 0 0 var(--s-3);
+  max-width: 70ch;
 }
 
 .run-detail-body p:last-child {
@@ -450,7 +450,6 @@
   display: grid;
   grid-template-columns: repeat(var(--choices, 4), minmax(0, 1fr));
   gap: var(--s-4);
-  max-width: 60rem;
 }
 
 .run-choice {
@@ -458,11 +457,13 @@
   --c-soft: var(--tone-neutral-soft);
   position: relative;
   display: grid;
-  grid-template-rows: auto auto 1fr;
-  justify-items: start;
-  gap: var(--s-2);
-  min-height: 7.5rem;
-  padding: var(--s-5) var(--s-5) var(--s-5);
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: var(--s-4);
+  row-gap: 2px;
+  align-items: center;
+  min-height: 4.25rem;
+  padding: var(--s-4) var(--s-4) var(--s-4) calc(var(--s-4) + 6px);
   border: var(--lw-wide) solid var(--ink);
   background: var(--paper);
   color: var(--ink);
@@ -490,24 +491,31 @@
   --c-soft: var(--tone-bad-soft);
 }
 
-.run-choice::after {
+/* Colour band: always visible, so each answer reads by colour before text. */
+.run-choice::before {
   content: "";
   position: absolute;
-  inset: auto 0 0 0;
-  height: 5px;
+  inset: 0 auto 0 0;
+  width: 6px;
   background: var(--c);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 200ms ease;
+}
+
+.run-choice.is-partial::before {
+  background: repeating-linear-gradient(-45deg, var(--tone-partial) 0 4px, color-mix(in srgb, var(--tone-partial) 40%, var(--paper)) 4px 7px);
+}
+
+.run-choice .key {
+  grid-row: 1 / span 2;
+  min-width: 1.9rem;
+  height: 1.9rem;
+  border-color: var(--c);
+  background: var(--c-soft);
 }
 
 .run-choice:hover {
-  transform: translate(-3px, -3px);
-  box-shadow: 4px 4px 0 var(--ink);
-}
-
-.run-choice:hover::after {
-  transform: scaleX(1);
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0 var(--ink);
+  background: var(--c-soft);
 }
 
 .run-choice:active {
@@ -522,43 +530,42 @@
 
 .run-choice.is-on {
   background: var(--c-soft);
-  box-shadow: inset 0 0 0 1px var(--ink);
+  border-color: var(--c);
+  box-shadow: inset 0 0 0 2px var(--c);
 }
 
-.run-choice.is-on::after {
-  transform: scaleX(1);
-  height: 7px;
-}
-
-.run-choice.is-partial.is-on {
-  background:
-    repeating-linear-gradient(-45deg, var(--tone-partial) 0 4px, transparent 4px 9px) left bottom / 100% 7px no-repeat,
-    var(--c-soft);
-}
-
-.run-choice.is-on .run-choice-hint {
-  color: var(--ink);
+.run-choice.is-on::before {
+  width: 10px;
 }
 
 .run-choice.is-on .key {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--c);
+  border-color: var(--c);
+  color: var(--on-brand);
+}
+
+.run-choice.is-partial.is-on .key {
+  color: var(--highlight-ink);
 }
 
 .run-choice.is-on .run-choice-label::after {
   content: " ✓";
 }
 
+.run-choice.is-on .run-choice-hint {
+  color: var(--ink);
+}
+
 .run-choice.is-pop {
-  animation: choice-pop 360ms cubic-bezier(0.3, 1.6, 0.4, 1) both;
+  animation: choice-pop 320ms cubic-bezier(0.3, 1.6, 0.4, 1) both;
 }
 
 @keyframes choice-pop {
   0% {
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
   60% {
-    transform: scale(1.03);
+    transform: scale(1.02);
   }
   100% {
     transform: scale(1);
@@ -567,20 +574,19 @@
 
 .run-choice-label {
   font-weight: 800;
-  font-size: var(--t-5);
+  font-size: var(--t-4);
   line-height: 1.1;
 }
 
 .run-choice-hint {
   font-size: var(--t-1);
-  line-height: 1.45;
+  line-height: 1.4;
   color: var(--ink-2);
 }
 
 /* ---------- Follow-up, feedback, nav ---------- */
 
 .run-follow {
-  max-width: 46rem;
   padding: var(--s-5);
   border: var(--lw-thin) solid var(--ink);
   border-left: 4px solid var(--run-accent);
@@ -697,7 +703,6 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(7rem, 1fr));
   width: 100%;
-  max-width: 44rem;
   border: var(--lw-wide) solid var(--ink);
 }
 
@@ -741,7 +746,6 @@
 
 .run-level-summary {
   width: 100%;
-  max-width: 44rem;
 }
 
 .run-level .run-nav {
@@ -850,11 +854,10 @@
     gap: var(--s-4);
   }
   .run-choice {
-    min-height: 6.25rem;
-    padding: var(--s-4);
+    min-height: 3.75rem;
   }
   .run-choice-label {
-    font-size: var(--t-4);
+    font-size: var(--t-3);
   }
   .run-q-title {
     max-width: none;
@@ -882,7 +885,6 @@
 .run-setup {
   display: grid;
   gap: var(--s-6);
-  max-width: 56rem;
 }
 
 .run-setup-head {
@@ -899,8 +901,8 @@
   margin: 0;
 }
 
-.run-setup .field {
-  max-width: 28rem;
+.run-setup .field input {
+  width: 100%;
 }
 
 .run-aside {
@@ -914,13 +916,49 @@
 }
 
 .run-q-ref {
-  display: none;
   font-weight: 700;
   color: var(--ink);
 }
 
-@container (max-width: 48rem) {
-  .run-q-ref {
-    display: inline;
-  }
+/* ---------- Embedded (compact) runs, e.g. inside a plan builder step ---------- */
+
+.run.is-compact .run-stage {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+  overflow: visible;
+}
+
+.run.is-compact .run-stage::before {
+  content: none;
+}
+
+.run.is-compact .run-hud {
+  padding: var(--s-4);
+  border: var(--lw-thin) solid var(--ink);
+  background: color-mix(in srgb, var(--ink) 3%, var(--paper));
+  margin-bottom: var(--s-5);
+}
+
+.run.is-compact .run-ref {
+  display: none;
+}
+
+.ctl-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.ctl-toolbar p {
+  margin: 0;
+}
+
+.run-follow .ctl-fields {
+  display: grid;
+  gap: var(--s-4);
 }

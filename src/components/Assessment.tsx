@@ -5,7 +5,8 @@ import { PageHero } from "@/components/PageHero";
 import { ConfirmButton, ContactLine, CopyButton, Fcf } from "@/components/primitives";
 import { OptionGrid, SpecTable } from "@/components/structure";
 import { formatDate, useToday } from "@/components/Timeline";
-import { Walkthrough, type RunChoice, type RunLevel } from "@/components/walkthrough/Walkthrough";
+import { readinessChoices, readinessFeedback } from "@/components/walkthrough/choices";
+import { Walkthrough, type RunLevel } from "@/components/walkthrough/Walkthrough";
 import { readinessBand, scoreAssessment, type Answers, type AnswerStatus } from "@/lib/assessment-score";
 import { categories, productTypes, requirementsFor, type ProductType, type Requirement } from "@/lib/cra-requirements";
 import { assessmentReportText } from "@/lib/report-text";
@@ -13,20 +14,6 @@ import { paths } from "@/lib/paths";
 import { PLAN_FROM_ASSESSMENT_KEY } from "@/lib/plan/storage";
 
 const STORAGE_KEY = "cra-assessment-v1";
-
-export const readinessChoices: RunChoice<AnswerStatus>[] = [
-  { value: "done", label: "Yes", hint: "We do this and can show evidence.", keys: ["1", "y"], tone: "good" },
-  { value: "partial", label: "Partly", hint: "Some of it, or not everywhere yet.", keys: ["2", "p"], tone: "partial" },
-  { value: "missing", label: "No", hint: "Not yet. It becomes a fix with guidance.", keys: ["3", "n"], tone: "bad" },
-  { value: "na", label: "N/A", hint: "Does not apply to this product.", keys: ["4", "a"], tone: "neutral" },
-];
-
-export function readinessFeedback(title: string, priority: string, value: AnswerStatus) {
-  if (value === "done") return "Logged as met. Keep the evidence: an auditor will ask for it.";
-  if (value === "partial") return `Partly met. ${title} joins your fix list at ${priority} priority.`;
-  if (value === "missing") return `Gap logged at ${priority} priority. Your report explains how to close it.`;
-  return "Marked not applicable. Record why in your technical file.";
-}
 
 const SECTION_LETTERS = "ABCDEF";
 

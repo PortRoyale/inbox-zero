@@ -588,3 +588,87 @@
 .fix-register .redline-id {
   font-size: var(--t-3);
 }
+
+/* Outcome decisions keep their meaning wherever they appear (record table, side panel). */
+.outcome-tag.is-pass {
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+  color: var(--on-brand);
+}
+
+.outcome-tag.is-required,
+.outcome-tag.is-blocked {
+  background: var(--redline);
+  border-color: var(--redline);
+  color: var(--paper);
+}
+
+.outcome-tag.is-not-required,
+.outcome-tag.is-na,
+.outcome-tag.is-incomplete {
+  background: transparent;
+  border-color: var(--ink-3);
+  color: var(--ink-2);
+}
+
+/* ---------- Plan builder alignment fixes ---------- */
+
+/* Other rules: the table itself is the frame; no extra dashed box that insets its edges. */
+.regimes {
+  border: 0;
+  padding: 0;
+}
+
+/* Checkbox inside a table cell: box and label on one aligned row. */
+.cell-check {
+  display: grid;
+  grid-template-columns: 1.15rem minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: start;
+  cursor: pointer;
+}
+
+.cell-check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--tool, var(--brand-blue));
+}
+
+/* "To fix" lists: type, finding and basis in three fixed columns. */
+.issue {
+  grid-template-columns: 5.5rem minmax(0, 1fr) 11rem;
+  align-items: start;
+}
+
+.issue-ref {
+  font-size: var(--t-1);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.issue-ref.code,
+.issue-ref .code {
+  letter-spacing: 0.03em;
+}
+
+@media (max-width: 40rem) {
+  .issue {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+  }
+  .issue-ref {
+    grid-column: 2;
+  }
+}
+
+/* Embedded runs: the plan's own step navigation is primary; the run's own nav stays secondary. */
+.run.is-compact .run-nav {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.run.is-compact .run-nav .btn-primary {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--ink);
+}

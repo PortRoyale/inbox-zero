@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { craClassInfo, industries, industryBySlug } from "@/content/industries";
 import type { CraClass } from "@/content/types";
-import { AreaField, Chips, SelectField, TextField, Toggle } from "@/components/plan/fields";
+import { AreaField, SelectField, TextField, Toggle } from "@/components/plan/fields";
 import { Markdown } from "@/components/plan/Markdown";
 import { PageHero } from "@/components/PageHero";
 import { SheetTabs } from "@/components/SheetTabs";
 import { Balloon, ConfirmButton, CopyButton, Fcf } from "@/components/primitives";
+import { CheckList, OptionGrid, SpecTable } from "@/components/structure";
+import { readinessChoices, readinessFeedback } from "@/components/walkthrough/choices";
+import { Walkthrough } from "@/components/walkthrough/Walkthrough";
 import { formatDate, useToday } from "@/components/Timeline";
 import type { AnswerStatus } from "@/lib/assessment-score";
 import { categories, productTypes, type ProductType } from "@/lib/cra-requirements";
@@ -18,13 +21,14 @@ import { fingerprintPlan, nextRevisionLetter } from "@/lib/plan/hash";
 import {
   addYears,
   applyIndustry,
-  dataOptions,
+  dataGroups,
   emptyPlan,
   euMemberStates,
   examplePlan,
-  interfaceOptions,
+  interfaceGroups,
   newId,
-  practiceOptions,
+  practiceGroups,
+  practiceHints,
   type Component,
   type Plan,
   type Risk,
@@ -263,8 +267,9 @@ export function PlanBuilder() {
                   <li key={c.id} className={`issue issue-${c.severity}`}>
                     <span className="issue-sev code">{c.severity}</span>
                     <span>
-                      <strong>{c.message}.</strong> {c.fix} <span className="code muted">{c.ref}</span>
+                      <strong>{c.message}.</strong> {c.fix}
                     </span>
+                    <span className="issue-ref code">{c.ref}</span>
                   </li>
                 ))}
               </ul>
@@ -421,27 +426,16 @@ function ProductStep({ plan, update, advanced }: StepProps) {
         ]}
         onChange={(users) => set({ users })}
       />
-      <fieldset className="span-2 chips">
-        <legend className="label">
-          What it includes <span className="req">*</span>
-        </legend>
-        <div className="chips-row">
-          {productTypes.map((t) => {
-            const on = p.types.includes(t.id);
-            return (
-              <button
-                key={t.id}
-                type="button"
-                aria-pressed={on}
-                className={`chip${on ? " is-on" : ""}`}
-                onClick={() => set({ types: on ? p.types.filter((x) => x !== t.id) : [...p.types, t.id as ProductType] })}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
+      <div className="span-2">
+        <OptionGrid
+          id="p-type"
+          legend="What it includes"
+          required
+          options={productTypes.map((t) => ({ value: t.id as ProductType, label: t.label, hint: t.hint }))}
+          selected={p.types}
+          onChange={(types) => set({ types })}
+        />
+      </div>
       <TextField id="p-market" label="Planned EU market date" type="date" value={p.marketDate} onChange={(marketDate) => set({ marketDate })} />
       <div className="field-with-action">
         <TextField
@@ -459,15 +453,57 @@ function ProductStep({ plan, update, advanced }: StepProps) {
           </button>
         )}
       </div>
-      <fieldset className="span-2 regimes">
-        <legend className="label">Other rules that apply today</legend>
-        <div className="form-grid">
-          <Toggle id="p-radio" label="It has a radio (Wi-Fi, Bluetooth, cellular…)" checked={p.radio} onChange={(radio) => set({ radio })} hint="EN 18031 under the RED delegated act, since 1 Aug 2025." />
-          {p.radio && <Toggle id="p-red" label="EN 18031 assessment done" checked={p.redAssessed} onChange={(redAssessed) => set({ redAssessed })} />}
-          <Toggle id="p-uk" label="We also sell it in the UK" checked={p.soldInUk} onChange={(soldInUk) => set({ soldInUk })} hint="UK PSTI Act, since 29 Apr 2024." />
-          {p.soldInUk && <Toggle id="p-psti" label="PSTI statement of compliance ready" checked={p.pstiStatement} onChange={(pstiStatement) => set({ pstiStatement })} />}
-        </div>
-      </fieldset>
+      <div className="span-2 regimes">
+        <SpecTable
+          caption="Other rules that apply today"
+          rows={[
+            {
+              id: "red",
+              rule: "Radio equipment cybersecurity (RED delegated act, EN 18031)",
+              since: "1 Aug 2025",
+              applies: { id: "p-radio", label: "It has a radio", checked: p.radio, on: (radio: boolean) => set({ radio }) },
+              ready: { id: "p-red", label: "EN 18031 assessment done", checked: p.redAssessed, on: (redAssessed: boolean) => set({ redAssessed }) },
+            },
+            {
+              id: "psti",
+              rule: "UK Product Security and Telecommunications Infrastructure Act",
+              since: "29 Apr 2024",
+              applies: { id: "p-uk", label: "We sell it in the UK", checked: p.soldInUk, on: (soldInUk: boolean) => set({ soldInUk }) },
+              ready: { id: "p-psti", label: "Statement of compliance ready", checked: p.pstiStatement, on: (pstiStatement: boolean) => set({ pstiStatement }) },
+            },
+          ]}
+          rowKey={(r) => r.id}
+          cols={[
+            { key: "rule", label: "Rule", head: true, render: (r) => r.rule },
+            { key: "since", label: "In force", width: "7.5rem", code: true, render: (r) => r.since },
+            {
+              key: "applies",
+              label: "Applies",
+              width: "11rem",
+              render: (r) => (
+                <label className="cell-check" htmlFor={r.applies.id}>
+                  <input id={r.applies.id} type="checkbox" checked={r.applies.checked} onChange={(e) => r.applies.on(e.target.checked)} />
+                  <span>{r.applies.label}</span>
+                </label>
+              ),
+            },
+            {
+              key: "ready",
+              label: "Ready",
+              width: "12rem",
+              render: (r) =>
+                r.applies.checked ? (
+                  <label className="cell-check" htmlFor={r.ready.id}>
+                    <input id={r.ready.id} type="checkbox" checked={r.ready.checked} onChange={(e) => r.ready.on(e.target.checked)} />
+                    <span>{r.ready.label}</span>
+                  </label>
+                ) : (
+                  <span className="muted">Not applicable</span>
+                ),
+            },
+          ]}
+        />
+      </div>
       <div className="class-callout span-2">
         <Fcf keyCell="CRA class" cells={[craClassInfo[p.craClass].label, `Self-assess: ${craClassInfo[p.craClass].selfAssess}`]} />
         <p>{craClassInfo[p.craClass].route}</p>
@@ -572,8 +608,20 @@ function ArchitectureStep({ plan, update, advanced }: StepProps) {
           ))}
         </ul>
       </div>
-      <Chips label="External interfaces (select all)" options={interfaceOptions} selected={plan.interfaces} onChange={(interfaces) => update((x) => ({ ...x, interfaces }))} />
-      <Chips label="Data the product handles" options={dataOptions} selected={plan.data} onChange={(data) => update((x) => ({ ...x, data }))} />
+      <OptionGrid
+        id="a-if"
+        legend="External interfaces"
+        groups={interfaceGroups.map((g) => ({ label: g.label, options: g.options.map((o) => ({ value: o, label: o })) }))}
+        selected={plan.interfaces}
+        onChange={(interfaces) => update((x) => ({ ...x, interfaces }))}
+      />
+      <OptionGrid
+        id="a-data"
+        legend="Data the product handles"
+        groups={dataGroups.map((g) => ({ label: g.label, options: g.options.map((o) => ({ value: o, label: o })) }))}
+        selected={plan.data}
+        onChange={(data) => update((x) => ({ ...x, data }))}
+      />
       {plan.components.some((c) => c.kind === "third-party") && <TemplateBlock title="Supplier security questionnaire" text={supplierQuestionnaire(plan)} />}
       <p className="muted">Your selections generate the risk assessment in the next step.</p>
     </div>
@@ -704,9 +752,8 @@ function RisksStep({ plan, update, advanced }: StepProps) {
 
 function ControlsStep({ plan, update, advanced, reqs }: StepProps & { reqs: ReturnType<typeof analyzePlan>["reqs"] }) {
   const [imported, setImported] = useState<string | null>(null);
-  const [catIndex, setCatIndex] = useState(0);
-  const groups = categories.map((cat) => ({ cat, items: reqs.filter((r) => r.category === cat.id) })).filter((g) => g.items.length > 0);
-  const group = groups[Math.min(catIndex, groups.length - 1)];
+  const [runKey, setRunKey] = useState(0);
+  const letters = "ABCDEF";
   const setCtl = (id: string, patch: Partial<Plan["controls"][string]>) =>
     update((x) => ({ ...x, controls: { ...x.controls, [id]: { ...(x.controls[id] ?? { how: "", evidence: "" }), ...patch } } }));
   const importAssessment = () => {
@@ -725,14 +772,39 @@ function ControlsStep({ plan, update, advanced, reqs }: StepProps & { reqs: Retu
         return { ...x, controls };
       });
       setImported(`Imported ${count} answers from your readiness check.`);
+      setRunKey((k) => k + 1);
     } catch {
       setImported("Could not read readiness check answers in this browser.");
     }
   };
+  const byId = Object.fromEntries(reqs.map((r) => [r.id, r]));
+  const levels = categories
+    .map((cat, ci) => ({
+      id: cat.id,
+      label: cat.label,
+      questions: reqs
+        .filter((r) => r.category === cat.id)
+        .map((r, i) => ({
+          id: r.id,
+          ref: `${letters[ci]}.${i + 1}`,
+          title: r.title,
+          prompt: r.question,
+          detail: <p>{r.guidance}</p>,
+          basis: `CRA ${r.craRef}`,
+          tag: { label: r.priority, tone: r.priority as "critical" | "high" | "standard" },
+        })),
+    }))
+    .filter((l) => l.questions.length > 0);
+  const answers = Object.fromEntries(Object.entries(plan.controls).filter(([, c]) => c.status).map(([id, c]) => [id, c.status as AnswerStatus]));
+  const answered = reqs.filter((r) => plan.controls[r.id]?.status).length;
+  const gaps = reqs.filter((r) => ["missing", "partial"].includes(plan.controls[r.id]?.status ?? "")).length;
+
   return (
     <div className="stack-sm">
-      <div className="row-between">
-        <p className="muted">{reqs.length} requirements apply to what your product includes.</p>
+      <div className="ctl-toolbar">
+        <p className="muted">
+          {reqs.length} requirements apply to what your product includes. {answered} answered.
+        </p>
         <div className="row">
           <button type="button" className="btn btn-quiet" onClick={importAssessment}>
             Import readiness check answers
@@ -743,78 +815,66 @@ function ControlsStep({ plan, update, advanced, reqs }: StepProps & { reqs: Retu
         </div>
       </div>
       {imported && <p className="note-line">{imported}</p>}
-      <div className="cat-pills" role="tablist" aria-label="Requirement categories">
-        {groups.map((g, gi) => {
-          const answered = g.items.filter((r) => plan.controls[r.id]?.status).length;
-          const gaps = g.items.filter((r) => ["missing", "partial"].includes(plan.controls[r.id]?.status ?? "")).length;
+      <Walkthrough<AnswerStatus>
+        key={runKey}
+        id="plan-req-run"
+        name="Requirements"
+        compact
+        levels={levels}
+        choices={readinessChoices}
+        answers={answers}
+        onAnswer={(id, status) => setCtl(id, { status })}
+        feedback={(q, v) => readinessFeedback(q.title, byId[q.id]?.priority ?? "standard", v)}
+        followUp={(q, v) => {
+          const e = plan.controls[q.id];
+          if (!advanced && v !== "na") return null;
           return (
-            <button
-              key={g.cat.id}
-              type="button"
-              role="tab"
-              aria-selected={gi === catIndex}
-              className={`cat-pill${gi === catIndex ? " is-on" : ""}`}
-              onClick={() => setCatIndex(gi)}
-            >
-              <span>{g.cat.label}</span>
-              <span className="code">
-                {answered < g.items.length ? `${answered}/${g.items.length}` : gaps ? `${gaps} gap${gaps > 1 ? "s" : ""}` : "✓"}
-              </span>
-            </button>
+            <div className="ctl-fields">
+              <AreaField
+                id={`how-${q.id}`}
+                rows={2}
+                label={v === "na" ? "Why it does not apply" : "How we meet it"}
+                value={e?.how ?? ""}
+                onChange={(how) => setCtl(q.id, { how })}
+                placeholder={byId[q.id]?.guidance}
+              />
+              {advanced && v !== "na" && (
+                <TextField
+                  id={`ev-${q.id}`}
+                  label="Evidence (link or document ID)"
+                  value={e?.evidence ?? ""}
+                  onChange={(evidence) => setCtl(q.id, { evidence })}
+                  placeholder="e.g. TEST-042 pen test report, Jira SEC-118"
+                />
+              )}
+            </div>
           );
-        })}
-      </div>
-      {group && (
-        <div className="ctl-group" role="tabpanel" aria-label={group.cat.label}>
-          <ul>
-            {group.items.map((r) => {
-              const e = plan.controls[r.id];
-              return (
-                <li key={r.id} className="ctl-row">
-                  <div className="ctl-head">
-                    <p id={`ctl-${r.id}`}>
-                      <strong>{r.title}</strong> <span className={`prio prio-${r.priority}`}>{r.priority}</span>
-                    </p>
-                    <div className="seg" role="radiogroup" aria-labelledby={`ctl-${r.id}`}>
-                      {STATUS_OPTIONS.map((o) => (
-                        <button key={o.value} type="button" role="radio" data-status={o.value} aria-checked={e?.status === o.value} onClick={() => setCtl(r.id, { status: o.value })}>
-                          {o.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {(advanced || e?.status === "na") && (
-                    <div className="ctl-fields">
-                      <AreaField
-                        id={`how-${r.id}`}
-                        rows={2}
-                        label={e?.status === "na" ? "Why it does not apply" : "How we meet it"}
-                        value={e?.how ?? ""}
-                        onChange={(how) => setCtl(r.id, { how })}
-                        placeholder={r.guidance}
-                      />
-                      {advanced && (
-                        <TextField
-                          id={`ev-${r.id}`}
-                          label="Evidence (link or document ID)"
-                          value={e?.evidence ?? ""}
-                          onChange={(evidence) => setCtl(r.id, { evidence })}
-                          placeholder="e.g. TEST-042 pen test report, Jira SEC-118"
-                        />
-                      )}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          {catIndex < groups.length - 1 && (
-            <button type="button" className="btn btn-quiet next-cat" onClick={() => setCatIndex(catIndex + 1)}>
-              Next category: {groups[catIndex + 1].cat.label} →
-            </button>
-          )}
-        </div>
-      )}
+        }}
+        stats={[
+          { label: "Gaps", value: gaps, tone: gaps ? "bad" : undefined },
+          { label: "Left", value: reqs.length - answered },
+        ]}
+        outroLabel="See coverage"
+        outro={
+          <SpecTable
+            caption="Requirement coverage"
+            rows={levels}
+            rowKey={(l) => l.id}
+            cols={[
+              { key: "sec", label: "Section", head: true, render: (l) => l.label },
+              { key: "n", label: "Requirements", width: "8rem", code: true, render: (l) => l.questions.length },
+              { key: "a", label: "Answered", width: "8rem", code: true, render: (l) => l.questions.filter((q) => plan.controls[q.id]?.status).length },
+              {
+                key: "g",
+                label: "Gaps",
+                width: "8rem",
+                code: true,
+                render: (l) => l.questions.filter((q) => ["missing", "partial"].includes(plan.controls[q.id]?.status ?? "")).length,
+              },
+            ]}
+          />
+        }
+      />
     </div>
   );
 }
@@ -823,7 +883,13 @@ function DevelopmentStep({ plan, update, advanced }: StepProps) {
   const set = (patch: Partial<Plan["sdlc"]>) => update((x) => ({ ...x, sdlc: { ...x.sdlc, ...patch } }));
   return (
     <div className="stack-sm">
-      <Chips label="Practices in place today" options={practiceOptions} selected={plan.sdlc.practices} onChange={(practices) => set({ practices })} />
+      <OptionGrid
+        id="d-prac"
+        legend="Practices in place today"
+        groups={practiceGroups.map((g) => ({ label: g.label, options: g.options.map((o) => ({ value: o, label: o, hint: practiceHints[o] })) }))}
+        selected={plan.sdlc.practices}
+        onChange={(practices) => set({ practices })}
+      />
       <div className="form-grid">
         <SelectField<Plan["sdlc"]["sbomFormat"]>
           id="d-sbom"
@@ -848,13 +914,6 @@ function DevelopmentStep({ plan, update, advanced }: StepProps) {
           ]}
           onChange={(penTestCadence) => set({ penTestCadence })}
         />
-        <Toggle
-          id="d-gate"
-          label="We decide testing per release with a release gate"
-          checked={plan.sdlc.releaseGate}
-          onChange={(releaseGate) => set({ releaseGate })}
-          hint="Use the free release gate and keep each record as evidence."
-        />
         {advanced && (
           <>
             <TextField id="d-sbomloc" label="Where SBOMs are stored" value={plan.sdlc.sbomLocation} onChange={(sbomLocation) => set({ sbomLocation })} placeholder="CI artifact store, per release" />
@@ -862,9 +921,23 @@ function DevelopmentStep({ plan, update, advanced }: StepProps) {
           </>
         )}
       </div>
-      <a className="btn btn-quiet" href={paths.releaseGate}>
-        Open the release gate →
-      </a>
+      <CheckList
+        legend="Release testing"
+        rows={[
+          {
+            id: "d-gate",
+            label: "We decide testing per release with a release gate",
+            hint: (
+              <>
+                Keep each release record as evidence. <a href={paths.releaseGate}>Open the free release gate</a>
+              </>
+            ),
+            basis: "Annex I Pt II(3)",
+            checked: plan.sdlc.releaseGate,
+            onChange: (releaseGate) => set({ releaseGate }),
+          },
+        ]}
+      />
     </div>
   );
 }
@@ -878,8 +951,20 @@ function VulnStep({ plan, update, advanced, today }: StepProps & { today: string
         <TextField id="v-contact" label="Security contact email" required type="email" value={plan.vulns.contact} onChange={(contact) => set({ contact })} placeholder="security@yourcompany.com" />
         <TextField id="v-policy" label="Disclosure policy URL" type="url" value={plan.vulns.policyUrl} onChange={(policyUrl) => set({ policyUrl })} placeholder="https://yourcompany.com/security" />
         <TextField id="v-adv" label="Where advisories are published" value={plan.vulns.advisoryChannel} onChange={(advisoryChannel) => set({ advisoryChannel })} placeholder="https://yourcompany.com/security/advisories" />
-        <Toggle id="v-txt" label="security.txt is published" checked={plan.vulns.securityTxt} onChange={(securityTxt) => set({ securityTxt })} hint="/.well-known/security.txt on your website" />
       </div>
+      <CheckList
+        legend="Published"
+        rows={[
+          {
+            id: "v-txt",
+            label: "security.txt is published",
+            hint: "/.well-known/security.txt on your website, pointing to your contact and policy.",
+            basis: "Annex I Pt II(5), (6)",
+            checked: plan.vulns.securityTxt,
+            onChange: (securityTxt) => set({ securityTxt }),
+          },
+        ]}
+      />
       {advanced && (
         <>
           <fieldset className="sla">
@@ -909,10 +994,28 @@ function UpdatesStep({ plan, update, advanced }: StepProps) {
         <div className="span-2">
           <AreaField id="u-mech" label="How updates reach users" required rows={2} value={plan.updates.mechanism} onChange={(mechanism) => set({ mechanism })} placeholder="e.g. Signed over-the-air images from our cloud, A/B partitions, automatic by default" />
         </div>
-        <Toggle id="u-signed" label="Updates are signed and verified before install" checked={plan.updates.signed} onChange={(signed) => set({ signed })} />
-        <Toggle id="u-auto" label="Automatic security updates are on by default" checked={plan.updates.autoUpdateDefault} onChange={(autoUpdateDefault) => set({ autoUpdateDefault })} hint="With a clear way for users to opt out." />
-        <Toggle id="u-sep" label="Security fixes can ship without a feature release" checked={plan.updates.separateSecurityUpdates} onChange={(separateSecurityUpdates) => set({ separateSecurityUpdates })} />
       </div>
+      <CheckList
+        legend="Update delivery"
+        rows={[
+          { id: "u-signed", label: "Updates are signed and verified before install", basis: "Annex I Pt I(2)(c)", checked: plan.updates.signed, onChange: (signed) => set({ signed }) },
+          {
+            id: "u-auto",
+            label: "Automatic security updates are on by default",
+            hint: "With a clear way for users to opt out.",
+            basis: "Annex I Pt I(2)(c)",
+            checked: plan.updates.autoUpdateDefault,
+            onChange: (autoUpdateDefault) => set({ autoUpdateDefault }),
+          },
+          {
+            id: "u-sep",
+            label: "Security fixes can ship without a feature release",
+            basis: "Annex I Pt II(8)",
+            checked: plan.updates.separateSecurityUpdates,
+            onChange: (separateSecurityUpdates) => set({ separateSecurityUpdates }),
+          },
+        ]}
+      />
       <div className="reporting-box">
         <Fcf redline keyCell="In force" cells={["Art. 14", "since 11 Sep 2026"]} />
         <p>Actively exploited vulnerabilities and severe incidents must be reported to ENISA's Single Reporting Platform: early warning within 24 hours, notification within 72 hours.</p>
@@ -928,8 +1031,20 @@ function UpdatesStep({ plan, update, advanced }: StepProps) {
             hint="Without one: your authorised representative's, then importer's, then distributor's member state."
           />
           <TextField id="u-notify" label="How you will inform users" value={plan.updates.userNotification} onChange={(userNotification) => set({ userNotification })} placeholder="In-app notice, email, website" />
-          <Toggle id="u-srp" label="Registered on ENISA's Single Reporting Platform" checked={plan.updates.srpRegistered} onChange={(srpRegistered) => set({ srpRegistered })} />
         </div>
+        <CheckList
+          legend="Reporting readiness"
+          rows={[
+            {
+              id: "u-srp",
+              label: "Registered on ENISA's Single Reporting Platform",
+              hint: "Reports route to the CSIRT of your main EU establishment.",
+              basis: "Art. 14; Art. 16",
+              checked: plan.updates.srpRegistered,
+              onChange: (srpRegistered) => set({ srpRegistered }),
+            },
+          ]}
+        />
         <a className="ext-link" href="https://www.enisa.europa.eu/topics/product-security-and-certification/single-reporting-platform-srp" target="_blank" rel="noreferrer">
           ENISA Single Reporting Platform ↗
         </a>
@@ -997,11 +1112,15 @@ function ReviewStep({
               <li key={c.id} className={`issue issue-${c.severity}`}>
                 <span className="issue-sev code">{c.severity}</span>
                 <span>
-                  <strong>{c.message}.</strong> {c.fix}{" "}
-                  {c.step !== "review" && (
+                  <strong>{c.message}.</strong> {c.fix}
+                </span>
+                <span className="issue-ref">
+                  {c.step !== "review" ? (
                     <button type="button" className="link-btn" onClick={() => onJump(c.step)}>
-                      Go to {STEPS.find((s) => s.id === c.step)?.label}
+                      Fix in {STEPS.find((s) => s.id === c.step)?.label}
                     </button>
+                  ) : (
+                    <span className="code muted">{c.ref}</span>
                   )}
                 </span>
               </li>
