@@ -1098,6 +1098,14 @@ function TemplateBlock({ title, text }: { title: string; text: string }) {
 }
 
 function ExportButtons({ plan, markdown }: { plan: Plan; markdown: string }) {
+  // Checked inline (not via canDownload) so the demo bundler can drop the download code entirely.
+  if (process.env.NEXT_PUBLIC_ROUTING === "hash") {
+    return (
+      <div className="row export-row">
+        <CopyButton label="Copy as Markdown" getText={() => markdown} />
+      </div>
+    );
+  }
   const file = (planTitle(plan) || "security-plan").toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const download = (content: string, name: string, type: string) => {
     const url = URL.createObjectURL(new Blob([content], { type }));
