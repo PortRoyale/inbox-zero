@@ -178,11 +178,11 @@ export function ReleaseGate() {
             <dl className="tblock">
               <div>
                 <dt>Product · version</dt>
-                <dd>{[release.product, release.version].filter(Boolean).join(" · ") || "—"}</dd>
+                <dd>{[release.product, release.version].filter(Boolean).join(" · ") || "Not set"}</dd>
               </div>
               <div>
                 <dt>Change</dt>
-                <dd>{release.ticket || "—"}</dd>
+                <dd>{release.ticket || "Not set"}</dd>
               </div>
               <div>
                 <dt>Changed surface</dt>

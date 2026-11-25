@@ -8,7 +8,7 @@ Our buyers make hardware, firmware and software products. Their native documents
 | Feature-control frame (`.fcf`) | GD&T compartment frame | Labels: sheet number, CRA clause, item count |
 | Balloon (`.balloon`) | Item number callout | Item IDs such as `C.4`, which also appear in the copied report |
 | Yellow highlighter (`.mark-done`) | Checker marks a verified dimension | Requirement met |
-| Hatched highlighter (`.mark-partial`) | — | Partly met |
+| Hatched highlighter (`.mark-partial`) | No drawing equivalent | Partly met |
 | Red-pen ellipse (`RedPen`) | Checker circles an error | Gap ("redline") |
 | Strike-through (`.mark-na`) | Deleted item | Not applicable or out of scope |
 | Revision cloud + triangle (`RevisionCloud`, `.revtri`) | Changed area on a revised drawing | Release trigger answered "yes" |

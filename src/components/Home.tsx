@@ -77,7 +77,7 @@ const features: [string, (boolean | string)[]][] = [
   ["Saved plans and release records in the cloud", [false, true, true, true]],
   ["SBOM watch", [false, true, true, true]],
   ["Disclosure kit", [false, true, true, true]],
-  ["Products covered", ["—", "1", "up to 5", "up to 5"]],
+  ["Products covered", ["None", "1", "up to 5", "up to 5"]],
   ["Reporting playbook", [false, false, true, true]],
   ["Sign-off roles, GitHub and Jira", [false, false, true, true]],
   ["Threat-model workshop with an expert", [false, false, false, true]],
@@ -335,7 +335,7 @@ export function Home() {
                   <th scope="row">{name}</th>
                   {has.map((h, i) => (
                     <td key={i} className="code cell-mark">
-                      {typeof h === "string" ? h : h ? <span aria-label="Included">●</span> : <span aria-label="Not included" className="muted">—</span>}
+                      {typeof h === "string" ? h : h ? <span aria-label="Included">●</span> : <span aria-label="Not included" className="muted">○</span>}
                     </td>
                   ))}
                 </tr>

@@ -83,7 +83,7 @@ export function planToMarkdown(plan: Plan, a: PlanAnalysis, fingerprint: string,
   table(
     ["Component", "Type", "Version", "Supplier", "Internet-facing"],
     plan.components.length
-      ? plan.components.map((c) => [c.name || GAP("name"), c.kind, c.version || "—", c.supplier || GAP("supplier"), yesNo(c.internetFacing)])
+      ? plan.components.map((c) => [c.name || GAP("name"), c.kind, c.version || "Not recorded", c.supplier || GAP("supplier"), yesNo(c.internetFacing)])
       : [[GAP("list components"), "", "", "", ""]],
   );
   out.push(`**External interfaces:** ${plan.interfaces.length ? plan.interfaces.join(", ") : GAP("interfaces")}`);
@@ -120,7 +120,7 @@ export function planToMarkdown(plan: Plan, a: PlanAnalysis, fingerprint: string,
       ["Requirement", "CRA ref.", "Status", "How we meet it", "Evidence"],
       inCat.map((r) => {
         const e = plan.controls[r.id];
-        return [r.title, r.craRef, e?.status ? STATUS_TEXT[e.status] : GAP("assess"), e?.how.trim() || "—", e?.evidence.trim() || "—"];
+        return [r.title, r.craRef, e?.status ? STATUS_TEXT[e.status] : GAP("assess"), e?.how.trim() || "Not described", e?.evidence.trim() || "None linked"];
       }),
     );
   }
@@ -177,7 +177,7 @@ export function planToMarkdown(plan: Plan, a: PlanAnalysis, fingerprint: string,
   h(2, "10. Evidence register");
   table(
     ["CRA ref.", "Obligation", "Plan section", "Evidence", "Status"],
-    a.register.map((r) => [r.ref, r.obligation, r.section, r.evidence || "—", r.status.toUpperCase()]),
+    a.register.map((r) => [r.ref, r.obligation, r.section, r.evidence || "None linked", r.status.toUpperCase()]),
   );
 
   h(2, "11. Action plan");
