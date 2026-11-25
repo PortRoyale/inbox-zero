@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "npx serve out",
+    "start": "next start",
+    "keys:generate": "node scripts/generate-keys.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build:demo": "node scripts/build-demo.mjs"

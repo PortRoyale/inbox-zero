@@ -25,6 +25,8 @@ const features: [string, (boolean | string)[]][] = [
   ["SBOM watch: hourly vulnerability checks and alerts", [false, true, true, true]],
   ["Incident clock with a shared timeline and report drafts", [false, true, true, true]],
   ["Signed evidence export for auditors", [false, true, true, true]],
+  ["Free trial", ["Not needed", "14 days", "14 days", "Free call"]],
+  ["Billing", ["Never", "Monthly or yearly", "Monthly or yearly", "Per engagement"]],
   ["Products covered", ["In browser", "1", "Up to 5", "Up to 5"]],
   ["People", ["You", "3", "25", "25"]],
   ["Approver and admin roles", [false, false, true, true]],

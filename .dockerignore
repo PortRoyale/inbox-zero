@@ -1,0 +1,20 @@
+# Keep the build context small and free of secrets. The Next.js build traces files from the
+# project directory into the standalone output, so anything sent here can end up in the image.
+node_modules
+.next
+.data
+dist-demo
+out
+.git
+*.db
+*.db-shm
+*.db-wal
+.env*
+*.pem
+*.key
+deploy
+Dockerfile
+.dockerignore
+*.tsbuildinfo
+coverage
+.DS_Store

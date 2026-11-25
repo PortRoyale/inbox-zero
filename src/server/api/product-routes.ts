@@ -1,7 +1,7 @@
 import { isSuperadmin } from "@/server/api/account-routes";
 import { download, json, route } from "@/server/http";
 import { HttpError } from "@/server/errors";
-import { all } from "@/server/db";
+import { all, get } from "@/server/db";
 import { open } from "@/server/crypto/envelope";
 import { publicKeyDocument } from "@/server/crypto/keys";
 import * as billing from "@/server/services/billing";
@@ -152,6 +152,12 @@ export const productRoutes = [
       return { ...result, bundleMatches };
     },
   ),
+  // Liveness and readiness for the container health check: the database answers and the keys load.
+  route({ method: "GET", path: "/health", access: "public" }, () => {
+    get("SELECT 1");
+    publicKeyDocument();
+    return json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+  }),
   route({ method: "GET", path: "/keys", access: "public" }, () => json(publicKeyDocument(), { headers: { "Cache-Control": "public, max-age=3600" } })),
 
   // ---------- SBOM watch ----------

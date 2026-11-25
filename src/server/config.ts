@@ -98,6 +98,8 @@ export function config(): Config {
   if (cronSecret && cronSecret.length < 32) throw new Error("CRON_SECRET must be at least 32 characters");
   const ipSalt = env.IP_HASH_SALT?.trim() || "";
   if (isProd && ipSalt.length < 32) throw new Error("IP_HASH_SALT must be set (32+ characters) in production");
+  // Sign-up, password reset and invitations all depend on email, so production must have a provider.
+  if (isProd && !env.RESEND_API_KEY?.trim() && !env.POSTMARK_SERVER_TOKEN?.trim()) throw new Error("Set RESEND_API_KEY or POSTMARK_SERVER_TOKEN in production");
   cached = {
     isProd,
     isTest: nodeEnv === "test" || env.READYLINE_TEST === "1",

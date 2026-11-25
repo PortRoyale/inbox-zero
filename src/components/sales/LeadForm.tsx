@@ -4,12 +4,17 @@ import { useEffect, useState } from "react";
 import { industries } from "@/content/industries";
 import { AreaField, SelectField, TextField } from "@/components/plan/fields";
 import { CopyButton } from "@/components/primitives";
+import { api, ApiError } from "@/lib/client/api";
 import { site } from "@/lib/site";
 
-type State = "idle" | "sending" | "sent" | "fallback" | "error";
+// The hosted site stores requests through its own API (encrypted, rate limited). The single-file
+// demo has no server, so it shows the contact address and a copy button instead.
+const hasServer = process.env.NEXT_PUBLIC_ROUTING !== "hash";
+
+type State = "idle" | "sending" | "sent" | "fallback" | "error" | "limited";
 
 export function LeadForm({ source = "pricing", interest = "" }: { source?: string; interest?: string }) {
-  const [form, setForm] = useState({ name: "", email: "", company: "", sector: "", ship: "", plan: interest, message: "" });
+  const [form, setForm] = useState({ name: "", email: "", company: "", sector: "", ship: "", plan: interest, message: "", website: "" });
   useEffect(() => {
     if (interest) setForm((f) => ({ ...f, plan: interest }));
   }, [interest]);
@@ -37,20 +42,26 @@ export function LeadForm({ source = "pricing", interest = "" }: { source?: strin
       setTried(true);
       return;
     }
-    if (!site.leadEndpoint) {
+    if (!hasServer) {
       setState("fallback");
       return;
     }
     setState("sending");
     try {
-      const res = await fetch(site.leadEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ ...form, source }),
+      await api("POST", "/leads", {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        company: form.company.trim(),
+        makes: industries.find((i) => i.slug === form.sector)?.name ?? "",
+        sellWhen: form.ship,
+        plan: form.plan,
+        notes: form.message.trim(),
+        source,
+        website: form.website,
       });
-      setState(res.ok ? "sent" : "error");
-    } catch {
-      setState("error");
+      setState("sent");
+    } catch (err) {
+      setState(err instanceof ApiError && err.status === 429 ? "limited" : "error");
     }
   };
 
@@ -99,6 +110,11 @@ export function LeadForm({ source = "pricing", interest = "" }: { source?: strin
         ]}
         onChange={set("plan")}
       />
+      {/* Honeypot for bots: hidden from people and assistive technology, never filled by a person. */}
+      <div className="visually-hidden" aria-hidden="true">
+        <label htmlFor={`lead-website-${source}`}>Website</label>
+        <input id={`lead-website-${source}`} name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => set("website")(e.target.value)} />
+      </div>
       <div className="span-2">
         <AreaField id={`lead-msg-${source}`} label="Anything we should know? (optional)" rows={2} value={form.message} onChange={set("message")} />
       </div>
@@ -113,6 +129,7 @@ export function LeadForm({ source = "pricing", interest = "" }: { source?: strin
         )}
       </div>
       {state === "error" && <p className="span-2 note-line">That didn't go through. Email {site.contactEmail} instead, or try again.</p>}
+      {state === "limited" && <p className="span-2 note-line">We've had several requests from your network in the last hour. Email {site.contactEmail} and we'll reply within one working day.</p>}
       {state === "fallback" && (
         <div className="span-2 note-line lead-fallback">
           <p>
