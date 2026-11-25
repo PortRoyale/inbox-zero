@@ -21,13 +21,17 @@ const today = () => new Date(now()).toISOString().slice(0, 10);
 
 // Every product read or write goes through here: membership of the product's team is required, and
 // non-members get 404 so product ids cannot be probed across teams.
-// Writes also need an active plan or trial, except where `allowLapsed` is set: incident reporting
-// (a legal duty), exports and deletions always work.
-export function requireProduct(userId: string, productId: string, min: Role = "viewer", opts: { allowLapsed?: boolean } = {}) {
+// Writes also need an active plan or trial and a product that is not archived, except where
+// `allowLapsed` is set: incident reporting (a legal duty), exports and deletions always work.
+// Otherwise archiving would free a product slot while the product stayed fully usable.
+export function requireProduct(userId: string, productId: string, min: Role = "viewer", opts: { allowLapsed?: boolean; allowArchived?: boolean } = {}) {
   const row = get<ProductRow>("SELECT * FROM products WHERE id = $id", { id: productId });
   if (!row) throw notFound();
   const org = requireOrg(userId, row.org_id, min);
-  if (min !== "viewer" && !opts.allowLapsed) requireWritable(row.org_id);
+  if (min !== "viewer" && !opts.allowLapsed) {
+    requireWritable(row.org_id);
+    if (row.archived_at !== null && !opts.allowArchived) throw new HttpError(409, "This product is archived, so it is read-only. Restore it in Settings to make changes.");
+  }
   return { row, org, name: productName(row) };
 }
 
@@ -106,7 +110,8 @@ export function renameProduct(userId: string, productId: string, name: string) {
 }
 
 export function setArchived(userId: string, productId: string, archived: boolean) {
-  const { org } = requireProduct(userId, productId, "admin", { allowLapsed: archived });
+  const { org, row } = requireProduct(userId, productId, "admin", { allowLapsed: archived, allowArchived: true });
+  if ((row.archived_at !== null) === archived) return;
   if (!archived) {
     const active = get<{ n: number }>("SELECT COUNT(*) AS n FROM products WHERE org_id = $o AND archived_at IS NULL", { o: org.orgId })!.n;
     if (active >= TIERS[org.tier].products) throw badRequest("Your plan's product limit is reached. Archive another product first.");
@@ -125,10 +130,19 @@ export function deleteProduct(userId: string, productId: string, confirmName: st
 // ---------- Plans (optimistic concurrency) ----------
 
 export function getPlan(userId: string, productId: string) {
-  const { org, name } = requireProduct(userId, productId, "viewer");
+  const { org, name, row: product } = requireProduct(userId, productId, "viewer");
   const row = get<{ content_sealed: string; version: number; updated_at: number; updated_by: string | null }>("SELECT * FROM plans WHERE product_id = $p", { p: productId });
   if (!row) throw notFound();
-  return { productName: name, role: org.role, tier: org.tier, orgId: org.orgId, plan: coercePlan(open(row.content_sealed, `plan:${productId}`)), version: row.version, updatedAt: row.updated_at };
+  return {
+    productName: name,
+    archived: product.archived_at !== null,
+    role: org.role,
+    tier: org.tier,
+    orgId: org.orgId,
+    plan: coercePlan(open(row.content_sealed, `plan:${productId}`)),
+    version: row.version,
+    updatedAt: row.updated_at,
+  };
 }
 
 export function savePlan(userId: string, productId: string, input: unknown, expectedVersion: number) {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { examplePlan } from "@/lib/plan/model";
+import { resetConfigForTests } from "@/server/config";
 import { get } from "@/server/db";
 import { grantManual } from "@/server/services/billing";
 import { lastLink, signedInUser, TestClient } from "@/server/test/client";
@@ -36,6 +37,23 @@ describe("products and plans", () => {
     const second = await owner.c.post(`/orgs/${owner.orgId}/products`, { name: "Second" });
     expect(second.status).toBe(400);
     expect(second.data.error).toMatch(/covers 1 product/);
+  });
+
+  it("makes archived products read-only, except incidents, export and restore", async () => {
+    const owner = await signedInUser("Archiver", "Archive Co");
+    const id = await productFor(owner);
+    const plan = await owner.c.get<{ plan: unknown; version: number; archived: boolean }>(`/products/${id}/plan`);
+    expect(plan.data.archived).toBe(false);
+    expect((await owner.c.patch(`/products/${id}`, { archived: true })).status).toBe(200);
+    expect((await owner.c.get<{ archived: boolean }>(`/products/${id}/plan`)).data.archived).toBe(true);
+    const save = await owner.c.call("PUT", `/products/${id}/plan`, { plan: plan.data.plan, version: plan.data.version });
+    expect(save.status).toBe(409);
+    expect((save.data as { error: string }).error).toMatch(/archived/);
+    expect((await owner.c.patch(`/products/${id}`, { name: "Renamed" })).status).toBe(409);
+    expect((await owner.c.post(`/products/${id}/incidents`, { kind: "incident", awareAt: Date.now() - 60_000, data: { title: "Still reportable" } })).status).toBe(201);
+    expect((await owner.c.post(`/products/${id}/export`)).status).toBe(200);
+    expect((await owner.c.patch(`/products/${id}`, { archived: false })).status).toBe(200);
+    expect((await owner.c.call("PUT", `/products/${id}/plan`, { plan: plan.data.plan, version: plan.data.version })).status).toBe(200);
   });
 
   it("keeps products private to their team (404, not 403)", async () => {
@@ -190,6 +208,27 @@ describe("leads and admin", () => {
     const user = await signedInUser("Not Admin", "Co");
     expect((await user.c.get("/admin/leads")).status).toBe(404);
     expect((await anon.get("/admin/leads")).status).toBe(401);
+  });
+
+  it("shows superadmins each team's billing state and grants plans with an end date", async () => {
+    const admin = await signedInUser("Super Admin", "Admin Co");
+    const customer = await signedInUser("Customer", "Customer Co");
+    process.env.SUPERADMIN_EMAILS = admin.email;
+    resetConfigForTests();
+    try {
+      type Row = { id: string; state: string; tier: string; paidUntil: number | null };
+      const list = await admin.c.get<{ orgs: Row[] }>("/admin/orgs");
+      expect(list.status).toBe(200);
+      expect(list.data.orgs.find((o) => o.id === customer.orgId)).toMatchObject({ state: "trial", tier: "team" });
+      const until = Date.now() + 365 * 86_400_000;
+      expect((await admin.c.patch(`/admin/orgs/${customer.orgId}`, { tier: "starter", until })).status).toBe(200);
+      const after = await admin.c.get<{ orgs: Row[] }>("/admin/orgs");
+      expect(after.data.orgs.find((o) => o.id === customer.orgId)).toMatchObject({ state: "active", tier: "starter", paidUntil: until });
+      expect((await customer.c.get("/admin/orgs")).status).toBe(404);
+    } finally {
+      delete process.env.SUPERADMIN_EMAILS;
+      resetConfigForTests();
+    }
   });
 
   it("serves the public signing keys", async () => {

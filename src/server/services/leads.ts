@@ -4,7 +4,7 @@ import { ipHash } from "@/server/crypto/secrets";
 import { all, get, newId, now, run } from "@/server/db";
 import { notFound, tooMany } from "@/server/errors";
 import { audit, rateLimit, sendMail } from "@/server/platform";
-import { grantManual } from "@/server/services/billing";
+import { entitlement, grantManual } from "@/server/services/billing";
 import { orgName, type Tier } from "@/server/services/orgs";
 
 export type Lead = { name: string; email: string; company: string; makes?: string; sellWhen?: string; plan?: string; notes?: string };
@@ -45,7 +45,10 @@ export function listAllOrgs() {
        (SELECT COUNT(*) FROM memberships m WHERE m.org_id = o.id) AS members,
        (SELECT COUNT(*) FROM products p WHERE p.org_id = o.id AND p.archived_at IS NULL) AS products
      FROM orgs o ORDER BY o.created_at DESC LIMIT 1000`,
-  ).map((r) => ({ id: r.id, name: orgName(r.id, r.name_sealed), tier: r.tier, createdAt: r.created_at, members: r.members, products: r.products }));
+  ).map((r) => {
+    const e = entitlement(r.id);
+    return { id: r.id, name: orgName(r.id, r.name_sealed), tier: e.tier, state: e.state, trialEndsAt: e.trialEndsAt, paidUntil: e.paidUntil, provider: e.provider, createdAt: r.created_at, members: r.members, products: r.products };
+  });
 }
 
 export function adminSetTier(actorId: string, orgId: string, tier: Tier, until: number | null = null) {

@@ -89,11 +89,12 @@ export function CopyButton({ getText, label = "Copy as text" }: { getText: () =>
   );
 }
 
-export function ConfirmButton({ label, confirmLabel, onConfirm }: { label: string; confirmLabel: string; onConfirm: () => void }) {
+// Two-step destructive action. "small" matches the other buttons in a table cell.
+export function ConfirmButton({ label, confirmLabel, onConfirm, small = false }: { label: string; confirmLabel: string; onConfirm: () => void; small?: boolean }) {
   const [armed, setArmed] = useState(false);
   if (!armed) {
     return (
-      <button type="button" className="btn btn-quiet" onClick={() => setArmed(true)}>
+      <button type="button" className={small ? "btn btn-small" : "btn btn-quiet"} onClick={() => setArmed(true)}>
         {label}
       </button>
     );
@@ -102,7 +103,7 @@ export function ConfirmButton({ label, confirmLabel, onConfirm }: { label: strin
     <div className="row">
       <button
         type="button"
-        className="btn btn-danger"
+        className={small ? "btn btn-danger btn-small" : "btn btn-danger"}
         onClick={() => {
           setArmed(false);
           onConfirm();
@@ -110,7 +111,7 @@ export function ConfirmButton({ label, confirmLabel, onConfirm }: { label: strin
       >
         {confirmLabel}
       </button>
-      <button type="button" className="btn btn-quiet" onClick={() => setArmed(false)}>
+      <button type="button" className={small ? "btn btn-quiet btn-small" : "btn btn-quiet"} onClick={() => setArmed(false)}>
         Cancel
       </button>
     </div>

@@ -12,7 +12,7 @@ import { Act, can, ErrorLine, PageTitle, useApp, useLoad, when } from "@/compone
 import { ProductIncidents } from "@/components/app/ProductIncidents";
 import { ProductSbom } from "@/components/app/ProductSbom";
 
-type PlanResponse = { productName: string; role: string; tier: string; orgId: string; plan: Plan; version: number; updatedAt: number };
+type PlanResponse = { productName: string; archived: boolean; role: string; tier: string; orgId: string; plan: Plan; version: number; updatedAt: number };
 type Revision = { id: string; rev: string; fingerprint: string; statement: Record<string, unknown> & { approver: string; issuedAt: string; summary: string }; signature: Record<string, unknown> & { kid: string; alg: string }; createdAt: number };
 type Release = { id: string; version: string; ticket: string; outcomes: { id: string; title: string; outcome: string; reason: string }[]; triggers: { id: string; note: string }[]; createdAt: number };
 
@@ -93,12 +93,14 @@ export function ProductWorkspace() {
   if (!plan.data) return <p className="muted">Loading the product…</p>;
   const p = plan.data;
   const role = org.role;
+  // Archived products are read-only, apart from incidents, export, restore and delete.
+  const edit = can(role, "editor") && !p.archived;
 
   return (
     <>
       <PageTitle
         label="Product"
-        cells={[org.name, `v${p.version}`, role]}
+        cells={[org.name, `v${p.version}`, role, ...(p.archived ? ["Archived"] : [])]}
         title={p.productName}
         lead={`Last saved ${when(p.updatedAt)}.`}
         actions={
@@ -107,6 +109,18 @@ export function ProductWorkspace() {
           </a>
         }
       />
+      {p.archived && (
+        <div className="note-line row-between archived-banner">
+          <p>
+            <strong>Archived.</strong> Everything stays readable and exportable, and incidents can still be reported. Restore it to edit the plan, releases and SBOMs.
+          </p>
+          {can(role, "admin") && (
+            <button type="button" className="btn btn-small" onClick={() => changeTab(TABS.indexOf("settings"))}>
+              Go to settings
+            </button>
+          )}
+        </div>
+      )}
       <WorkspaceTabs
         value={TABS.indexOf(tab)}
         onChange={changeTab}
@@ -116,22 +130,22 @@ export function ProductWorkspace() {
             label: "Security plan",
             content:
               tab === "plan" ? (
-                <PlanBuilder cloud={{ productId, initialPlan: p.plan, initialVersion: p.version, canEdit: can(role, "editor"), canApprove: can(role, "approver") }} />
+                <PlanBuilder cloud={{ productId, initialPlan: p.plan, initialVersion: p.version, canEdit: edit, canApprove: can(role, "approver") && !p.archived }} />
               ) : null,
           },
-          { id: "revisions", label: "Signed revisions", content: tab === "revisions" ? <Revisions productId={productId} /> : null },
-          { id: "releases", label: "Release records", content: tab === "releases" ? <Releases productId={productId} productName={p.productName} canEdit={can(role, "editor")} /> : null },
-          { id: "sbom", label: "SBOM watch", content: tab === "sbom" ? <ProductSbom productId={productId} canEdit={can(role, "editor")} canDelete={can(role, "admin")} /> : null },
+          { id: "revisions", label: "Signed revisions", content: tab === "revisions" ? <Revisions productId={productId} onOpenPlan={() => changeTab(0)} /> : null },
+          { id: "releases", label: "Release records", content: tab === "releases" ? <Releases productId={productId} productName={p.productName} canEdit={edit} /> : null },
+          { id: "sbom", label: "SBOM watch", content: tab === "sbom" ? <ProductSbom productId={productId} canEdit={edit} canDelete={can(role, "admin")} /> : null },
           { id: "incidents", label: "Incident clock", content: tab === "incidents" ? <ProductIncidents productId={productId} productName={p.productName} canEdit={can(role, "editor")} /> : null },
           { id: "evidence", label: "Evidence export", content: tab === "evidence" ? <Evidence productId={productId} canExport={can(role, "editor")} /> : null },
-          { id: "settings", label: "Settings", content: tab === "settings" ? <Settings productId={productId} name={p.productName} canEdit={can(role, "editor")} isAdmin={can(role, "admin")} /> : null },
+          { id: "settings", label: "Settings", content: tab === "settings" ? <Settings productId={productId} name={p.productName} archived={p.archived} onChanged={plan.reload} canEdit={edit} isAdmin={can(role, "admin")} /> : null },
         ]}
       />
     </>
   );
 }
 
-function Revisions({ productId }: { productId: string }) {
+function Revisions({ productId, onOpenPlan }: { productId: string; onOpenPlan: () => void }) {
   const revs = useLoad(() => api<{ revisions: Revision[] }>("GET", `/products/${productId}/revisions`), [productId]);
   return (
     <div className="stack-sm">
@@ -141,7 +155,14 @@ function Revisions({ productId }: { productId: string }) {
         signed statement on the <a href="/verify-signature/">verification page</a>.
       </p>
       <ErrorLine error={revs.error} />
-      {revs.data && revs.data.revisions.length === 0 && <p className="note-line">No revisions yet.</p>}
+      {revs.data && revs.data.revisions.length === 0 && (
+        <div className="note-line row-between">
+          <p>No revisions yet. Revision A is issued from step 8, Review and export, once an approver is happy with the plan.</p>
+          <button type="button" className="btn btn-small" onClick={onOpenPlan}>
+            Open the plan
+          </button>
+        </div>
+      )}
       {revs.data && revs.data.revisions.length > 0 && (
         <SpecTable
           rows={revs.data.revisions}
@@ -272,7 +293,7 @@ function Evidence({ productId, canExport }: { productId: string; canExport: bool
   );
 }
 
-function Settings({ productId, name, canEdit, isAdmin }: { productId: string; name: string; canEdit: boolean; isAdmin: boolean }) {
+function Settings({ productId, name, archived, onChanged, canEdit, isAdmin }: { productId: string; name: string; archived: boolean; onChanged: () => void; canEdit: boolean; isAdmin: boolean }) {
   const [newName, setNewName] = useState(name);
   const [confirm, setConfirm] = useState("");
   const [msg, setMsg] = useState("");
@@ -311,12 +332,15 @@ function Settings({ productId, name, canEdit, isAdmin }: { productId: string; na
           <h3>Archive or delete</h3>
           <p className="muted">Archiving keeps everything readable and frees a product slot. Deleting removes the plan, revisions, records, SBOMs and incidents for good.</p>
           <div className="row">
-            <button type="button" className="btn" onClick={() => act(() => api("PATCH", `/products/${productId}`, { archived: true }), "Archived. It stays readable.")}>
-              Archive
-            </button>
-            <button type="button" className="btn" onClick={() => act(() => api("PATCH", `/products/${productId}`, { archived: false }), "Restored.")}>
-              Restore
-            </button>
+            {archived ? (
+              <button type="button" className="btn" onClick={() => act(() => api("PATCH", `/products/${productId}`, { archived: false }).then(onChanged), "Restored.")}>
+                Restore product
+              </button>
+            ) : (
+              <button type="button" className="btn" onClick={() => act(() => api("PATCH", `/products/${productId}`, { archived: true }).then(onChanged), "Archived. It stays readable.")}>
+                Archive product
+              </button>
+            )}
           </div>
           <form
             className="inline-form"

@@ -44,11 +44,39 @@ function useFlash() {
   return { run, view };
 }
 
+// "invite.sent" reads as "Invite sent"; a few words keep their usual capitals.
+const WORDS: Record<string, string> = { sbom: "SBOM", org: "Team", csirt: "CSIRT", manual_grant: "plan granted by hand" };
+function actionLabel(action: string): string {
+  const text = action
+    .split(".")
+    .map((w) => WORDS[w] ?? w.replace(/_/g, " "))
+    .join(" ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+// "Chrome 158 on Linux" from a user-agent string; the full string stays visible underneath.
+function deviceName(ua: string): string {
+  // Most specific first: Edge and Opera also say "Chrome", and Chrome also says "Safari".
+  const browsers: [RegExp, string][] = [
+    [/Edg\/(\d+)/, "Edge"],
+    [/OPR\/(\d+)/, "Opera"],
+    [/(?:Firefox|FxiOS)\/(\d+)/, "Firefox"],
+    [/HeadlessChrome\/(\d+)/, "Chrome (headless)"],
+    [/(?:Chrome|CriOS)\/(\d+)/, "Chrome"],
+    [/Version\/(\d+).*Safari/, "Safari"],
+  ];
+  const hit = browsers.map(([re, name]) => [ua.match(re), name] as const).find(([m]) => m);
+  const os = /iPhone|iPad/.test(ua) ? "iOS" : /Android/.test(ua) ? "Android" : /Mac OS X/.test(ua) ? "macOS" : /Windows/.test(ua) ? "Windows" : /CrOS/.test(ua) ? "ChromeOS" : /Linux/.test(ua) ? "Linux" : "";
+  const b = hit ? `${hit[1]} ${hit[0]![1]}` : "Unknown browser";
+  return os ? `${b} on ${os}` : b;
+}
+
 export function TeamPage() {
   const { me, org, refresh } = useApp();
   const info = useLoad(() => api<OrgInfo>("GET", `/orgs/${org.id}`), [org.id]);
   const members = useLoad(() => api<{ members: Member[] }>("GET", `/orgs/${org.id}/members`), [org.id]);
   const isAdmin = can(org.role, "admin");
+  const owners = members.data?.members.filter((m) => m.role === "owner").length ?? 0;
   const invites = useLoad(() => (isAdmin ? api<{ invites: Invite[] }>("GET", `/orgs/${org.id}/invites`) : Promise.resolve({ invites: [] as Invite[] })), [org.id, isAdmin]);
   const audit = useLoad(() => (isAdmin ? api<{ entries: AuditEntry[] }>("GET", `/orgs/${org.id}/audit`) : Promise.resolve({ entries: [] as AuditEntry[] })), [org.id, isAdmin]);
   const [email, setEmail] = useState("");
@@ -108,8 +136,12 @@ export function TeamPage() {
                 label: "Remove",
                 width: "10rem",
                 render: (m) =>
-                  (isAdmin || m.userId === me.user.id) && (
+                  m.role === "owner" && owners === 1 ? (
+                    <span className="muted">Only owner</span>
+                  ) : (
+                    (isAdmin || m.userId === me.user.id) && (
                     <ConfirmButton
+                      small
                       label={m.userId === me.user.id ? "Leave team" : "Remove"}
                       confirmLabel="Confirm"
                       onConfirm={() =>
@@ -120,6 +152,7 @@ export function TeamPage() {
                         }, "Removed.")
                       }
                     />
+                    )
                   ),
               },
             ]}
@@ -169,6 +202,11 @@ export function TeamPage() {
               ]}
             />
           )}
+        </section>
+      )}
+      {isAdmin && (
+        <section className="sheet stack-sm" aria-labelledby="team-name-title">
+          <h2 id="team-name-title">Team name</h2>
           <form
             className="inline-form"
             onSubmit={(e) => {
@@ -194,7 +232,7 @@ export function TeamPage() {
             cols={[
               { key: "t", label: "When (UTC)", width: "12rem", code: true, render: (a) => when(a.at).replace(" UTC", "") },
               { key: "w", label: "Who", width: "12rem", render: (a) => (a.userId ? (names[a.userId] ?? "Former member") : "System") },
-              { key: "a", label: "Action", head: true, code: true, render: (a) => a.action },
+              { key: "a", label: "Action", head: true, render: (a) => actionLabel(a.action) },
               { key: "d", label: "Detail", render: (a) => Object.entries(a.meta).map(([k, v]) => `${k}: ${String(v)}`).join(", ") },
             ]}
           />
@@ -267,7 +305,7 @@ export function AccountPage() {
               rowKey={() => "b"}
               cols={[
                 { key: "s", label: "Status", width: "10rem", render: (x) => <span className={`count-tag ${x.state === "active" ? "is-good" : x.state === "trial" ? "is-partial" : "is-bad"}`}>{x.state === "past_due" ? "Payment due" : x.state}</span> },
-                { key: "t", label: "Plan", width: "8rem", code: true, render: (x) => x.tier },
+                { key: "t", label: "Plan", width: "9rem", code: true, render: (x) => planLabel({ tier: x.tier, trial: x.state === "trial" }) },
                 { key: "u", label: "Paid until", width: "10rem", code: true, render: (x) => (x.paidUntil ? when(x.paidUntil).slice(0, 11) : x.state === "active" ? "Renews monthly" : "None") },
                 { key: "tr", label: "Trial ends", width: "10rem", code: true, render: (x) => when(x.trialEndsAt).slice(0, 11) },
                 { key: "p", label: "Billed by", render: (x) => x.provider ?? "Not yet" },
@@ -339,7 +377,20 @@ export function AccountPage() {
             rows={sessions.data.sessions}
             rowKey={(s) => `${s.createdAt}-${s.device}`}
             cols={[
-              { key: "d", label: "Device", head: true, render: (s) => `${s.device.slice(0, 90)}${s.current ? " (this device)" : ""}` },
+              {
+                key: "d",
+                label: "Device",
+                head: true,
+                render: (s) => (
+                  <>
+                    <span className="cell-title">
+                      {deviceName(s.device)}
+                      {s.current && <span className="muted"> (this device)</span>}
+                    </span>
+                    <span className="cell-body muted code">{s.device.slice(0, 120)}</span>
+                  </>
+                ),
+              },
               { key: "c", label: "Signed in", width: "10rem", code: true, render: (s) => when(s.createdAt).slice(0, 11) },
               { key: "l", label: "Last seen", width: "10rem", code: true, render: (s) => when(s.lastSeenAt).slice(0, 11) },
             ]}
@@ -355,7 +406,7 @@ export function AccountPage() {
           cols={[
             { key: "n", label: "Team", head: true, render: (o) => o.name },
             { key: "r", label: "Your role", width: "9rem", code: true, render: (o) => o.role },
-            { key: "t", label: "Plan", width: "8rem", code: true, render: (o) => o.tier },
+            { key: "t", label: "Plan", width: "9rem", code: true, render: (o) => planLabel(o) },
           ]}
         />
         <form className="inline-form" onSubmit={async (e) => (e.preventDefault(), (await flash.run(() => api("POST", "/orgs", { name: teamName }).then(refresh), "Team created.")) && setTeamName(""))}>
@@ -396,7 +447,56 @@ export function AccountPage() {
 }
 
 type Lead = { id: string; name: string; email: string; company: string; makes?: string; sellWhen?: string; plan?: string; notes?: string; createdAt: number };
-type AdminOrg = { id: string; name: string; tier: "starter" | "team"; createdAt: number; members: number; products: number };
+type AdminOrg = {
+  id: string;
+  name: string;
+  tier: "starter" | "team";
+  state: "trial" | "active" | "past_due" | "lapsed";
+  trialEndsAt: number;
+  paidUntil: number | null;
+  provider: string | null;
+  createdAt: number;
+  members: number;
+  products: number;
+};
+
+const STATE_TAG: Record<AdminOrg["state"], [string, string]> = {
+  trial: ["is-partial", "Trial"],
+  active: ["is-good", "Active"],
+  past_due: ["is-bad", "Payment due"],
+  lapsed: ["is-neutral", "Lapsed"],
+};
+
+// Grants run from today for a year, or with no end date for invoiced customers.
+const GRANTS = [
+  { id: "starter-year", label: "Starter, 1 year", tier: "starter", years: 1 },
+  { id: "team-year", label: "Team, 1 year", tier: "team", years: 1 },
+  { id: "team-open", label: "Team, no end date", tier: "team", years: 0 },
+] as const;
+
+function GrantCell({ org, onDone, run }: { org: AdminOrg; onDone: () => void; run: (fn: () => Promise<unknown>, ok?: string) => Promise<boolean> }) {
+  const [grant, setGrant] = useState<(typeof GRANTS)[number]["id"]>("team-year");
+  const g = GRANTS.find((x) => x.id === grant)!;
+  return (
+    <div className="cell-form">
+      <select className="cell-select" aria-label={`Plan to grant ${org.name}`} value={grant} onChange={(e) => setGrant(e.target.value as typeof grant)}>
+        {GRANTS.map((x) => (
+          <option key={x.id} value={x.id}>
+            {x.label}
+          </option>
+        ))}
+      </select>
+      <ConfirmButton
+        small
+        label="Grant"
+        confirmLabel="Confirm"
+        onConfirm={() =>
+          run(() => api("PATCH", `/admin/orgs/${org.id}`, { tier: g.tier, ...(g.years ? { until: Date.now() + g.years * 365 * 86_400_000 } : {}) }).then(onDone), `${g.label} granted to ${org.name}.`)
+        }
+      />
+    </div>
+  );
+}
 
 export function AdminPage() {
   const { me } = useApp();
@@ -410,7 +510,8 @@ export function AdminPage() {
       <section className="sheet stack-sm">
         <h2>Early-access requests</h2>
         <ErrorLine error={leads.error} />
-        {leads.data && (
+        {leads.data && leads.data.leads.length === 0 && <p className="note-line">No requests yet. They arrive from the form on the pricing page.</p>}
+        {leads.data && leads.data.leads.length > 0 && (
           <SpecTable
             rows={leads.data.leads}
             rowKey={(l) => l.id}
@@ -438,7 +539,7 @@ export function AdminPage() {
                 key: "x",
                 label: "Delete",
                 width: "9rem",
-                render: (l) => <ConfirmButton label="Delete" confirmLabel="Confirm" onConfirm={() => flash.run(() => api("DELETE", `/admin/leads/${l.id}`).then(leads.reload))} />,
+                render: (l) => <ConfirmButton small label="Delete" confirmLabel="Confirm" onConfirm={() => flash.run(() => api("DELETE", `/admin/leads/${l.id}`).then(leads.reload))} />,
               },
             ]}
           />
@@ -454,18 +555,21 @@ export function AdminPage() {
               { key: "n", label: "Team", head: true, render: (o) => o.name },
               { key: "m", label: "People", width: "7rem", code: true, render: (o) => o.members },
               { key: "p", label: "Products", width: "8rem", code: true, render: (o) => o.products },
-              { key: "c", label: "Created", width: "9rem", code: true, render: (o) => when(o.createdAt).slice(0, 11) },
               {
-                key: "t",
-                label: "Grant plan",
-                width: "12rem",
-                render: (o) => (
-                  <select className="cell-select" aria-label={`Plan for ${o.name}`} value={o.tier} onChange={(e) => flash.run(() => api("PATCH", `/admin/orgs/${o.id}`, { tier: e.target.value }).then(orgs.reload), "Plan granted.")}>
-                    <option value="starter">starter</option>
-                    <option value="team">team</option>
-                  </select>
-                ),
+                key: "s",
+                label: "Status",
+                width: "9rem",
+                render: (o) => <span className={`count-tag ${STATE_TAG[o.state][0]}`}>{STATE_TAG[o.state][1]}</span>,
               },
+              { key: "pl", label: "Plan", width: "8rem", code: true, render: (o) => planLabel({ tier: o.tier, trial: o.state === "trial" }) },
+              {
+                key: "u",
+                label: "Until",
+                width: "9rem",
+                code: true,
+                render: (o) => (o.state === "trial" ? when(o.trialEndsAt).slice(0, 11) : o.paidUntil ? when(o.paidUntil).slice(0, 11) : o.state === "active" ? "No end" : "Ended"),
+              },
+              { key: "t", label: "Grant a plan", width: "17rem", render: (o) => <GrantCell org={o} onDone={orgs.reload} run={flash.run} /> },
             ]}
           />
         )}

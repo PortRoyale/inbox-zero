@@ -112,7 +112,7 @@ export function FindingsTable({ findings, onStatus }: { findings: FindingView[];
                 label: "Status",
                 width: "10rem",
                 render: (f: FindingView) => (
-                  <select className="cell-select" aria-label={`Status for ${f.vulnId}`} value={f.status ?? "open"} onChange={(e) => onStatus(f, e.target.value)}>
+                  <select className={`cell-select is-${f.status ?? "open"}`} aria-label={`Status for ${f.vulnId}`} value={f.status ?? "open"} onChange={(e) => onStatus(f, e.target.value)}>
                     {Object.entries(STATUS_LABEL).map(([v, l]) => (
                       <option key={v} value={v}>
                         {l}
