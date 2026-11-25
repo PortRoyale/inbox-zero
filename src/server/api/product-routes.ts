@@ -8,6 +8,7 @@ import * as evidence from "@/server/services/evidence";
 import * as leads from "@/server/services/leads";
 import * as orgs from "@/server/services/orgs";
 import * as products from "@/server/services/products";
+import * as sbom from "@/server/services/sbom";
 import { v } from "@/server/validate";
 
 const name = v.string({ min: 1, max: 120 });
@@ -151,6 +152,36 @@ export const productRoutes = [
     },
   ),
   route({ method: "GET", path: "/keys", access: "public" }, () => json(publicKeyDocument(), { headers: { "Cache-Control": "public, max-age=3600" } })),
+
+  // ---------- SBOM watch ----------
+  route({ method: "GET", path: "/products/:productId/sboms", access: "verified" }, ({ user, params }) => ({ sboms: sbom.listSboms(user.id, params.productId) })),
+  route(
+    { method: "POST", path: "/products/:productId/sboms", access: "verified", maxBytes: 6 * 1024 * 1024, body: v.object({ label: v.string({ min: 1, max: 120 }), text: v.string({ min: 2, max: 5 * 1024 * 1024, trim: false }) }) },
+    async ({ user, params, body }) => json(await sbom.uploadSbom(user.id, params.productId, body.label, body.text), { status: 201 }),
+  ),
+  route({ method: "GET", path: "/products/:productId/sboms/:id/findings", access: "verified" }, ({ user, params }) => ({ findings: sbom.listFindings(user.id, params.productId, params.id) })),
+  route({ method: "POST", path: "/products/:productId/sboms/:id/check", access: "verified" }, async ({ user, params }) => {
+    products.requireProduct(user.id, params.productId, "editor");
+    if (!sbom.listSboms(user.id, params.productId).some((s) => s.id === params.id)) throw new HttpError(404, "Not found.");
+    const res = await sbom.runCheck(params.id);
+    return { newFindings: res.newFindings.length, error: res.error };
+  }),
+  route({ method: "DELETE", path: "/products/:productId/sboms/:id", access: "verified" }, ({ user, params }) => {
+    sbom.deleteSbom(user.id, params.productId, params.id);
+    return { ok: true };
+  }),
+  route(
+    { method: "PATCH", path: "/products/:productId/findings/:id", access: "verified", body: v.object({ status: v.enum(sbom.FINDING_STATUSES), note: v.optional(v.string({ max: 2000 })) }) },
+    ({ user, params, body }) => {
+      sbom.setFindingStatus(user.id, params.productId, params.id, body.status, body.note ?? "");
+      return { ok: true };
+    },
+  ),
+  route(
+    { method: "POST", path: "/tools/sbom-check", access: "public", maxBytes: 6 * 1024 * 1024, body: v.object({ text: v.string({ min: 2, max: 5 * 1024 * 1024, trim: false }) }) },
+    ({ body, ip }) => sbom.checkOnce(body.text, ip),
+  ),
+  route({ method: "POST", path: "/cron/sbom-watch", access: "cron" }, () => sbom.watchAll()),
 
   // ---------- Leads ----------
   route(

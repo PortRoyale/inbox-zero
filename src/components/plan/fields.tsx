@@ -9,15 +9,17 @@ export function TextField({
   type = "text",
   hint,
   required,
+  autoComplete,
 }: {
   id: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  type?: "text" | "email" | "url" | "date" | "number";
+  type?: "text" | "email" | "url" | "date" | "number" | "password" | "datetime-local";
   hint?: string;
   required?: boolean;
+  autoComplete?: string;
 }) {
   return (
     <label className="field" htmlFor={id}>
@@ -25,7 +27,7 @@ export function TextField({
         {label}
         {required && <span className="req" aria-label="required"> *</span>}
       </span>
-      <input id={id} type={type} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+      <input id={id} type={type} value={value} placeholder={placeholder} autoComplete={autoComplete} required={required} onChange={(e) => onChange(e.target.value)} />
       {hint && <span className="hint">{hint}</span>}
     </label>
   );

@@ -37,6 +37,7 @@ import { riskLevel, riskScore, suggestRisks } from "@/lib/plan/risks";
 import { PLAN_FROM_ASSESSMENT_KEY, PLAN_PRESET_KEY, PLAN_STORAGE_KEY } from "@/lib/plan/storage";
 import { disclosurePolicy, fundingOutline, reportingRunbook, securityTxt, supplierQuestionnaire } from "@/lib/plan/templates";
 import { DAYS_BY_CLASS, GUIDED, STARTER_YEAR } from "@/lib/costs";
+import { api, type ApiError } from "@/lib/client/api";
 
 const ASSESSMENT_KEY = "cra-assessment-v1";
 const canDownload = process.env.NEXT_PUBLIC_ROUTING !== "hash";
@@ -59,11 +60,26 @@ const STATUS_OPTIONS: { value: AnswerStatus; label: string }[] = [
   { value: "na", label: "N/A" },
 ];
 
-export function PlanBuilder() {
+// Cloud mode: the plan belongs to a product in a team workspace. It is loaded from and saved to the
+// server (optimistic versioning), and revisions are fingerprinted and signed by the server.
+export type CloudPlan = {
+  productId: string;
+  initialPlan: Plan;
+  initialVersion: number;
+  canEdit: boolean;
+  canApprove: boolean;
+};
+
+type SaveState = { kind: "saved" | "saving" | "dirty" | "error" | "conflict"; message?: string };
+
+export function PlanBuilder({ cloud }: { cloud?: CloudPlan } = {}) {
   const todayMs = useToday();
   const today = new Date(todayMs).toISOString().slice(0, 10);
-  const [plan, setPlan] = useState<Plan>(() => exampleWithOwners());
-  const [isExample, setIsExample] = useState(true);
+  const [plan, setPlan] = useState<Plan>(() => (cloud ? cloud.initialPlan : exampleWithOwners()));
+  const [isExample, setIsExample] = useState(!cloud);
+  const [version, setVersion] = useState(cloud?.initialVersion ?? 0);
+  const [save, setSave] = useState<SaveState>({ kind: "saved" });
+  const dirty = useRef(false);
   const [step, setStep] = useState(0);
   const [advanced, setAdvanced] = useState(false);
   const [view, setView] = useState<"build" | "document">("build");
@@ -73,6 +89,10 @@ export function PlanBuilder() {
   const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (cloud) {
+      setLoaded(true);
+      return;
+    }
     try {
       const preset = localStorage.getItem(PLAN_PRESET_KEY);
       const saved = localStorage.getItem(PLAN_STORAGE_KEY);
@@ -103,7 +123,7 @@ export function PlanBuilder() {
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || cloud) return;
     try {
       localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify({ plan, isExample, advanced }));
     } catch {
@@ -119,11 +139,63 @@ export function PlanBuilder() {
     };
   }, [plan]);
 
+  // Cloud autosave: debounced, versioned; a conflicting save never overwrites someone else's work.
+  useEffect(() => {
+    if (!cloud || !cloud.canEdit || !dirty.current || save.kind === "conflict") return;
+    setSave({ kind: "dirty" });
+    const t = setTimeout(async () => {
+      setSave({ kind: "saving" });
+      try {
+        const res = await api<{ version: number }>("PUT", `/products/${cloud.productId}/plan`, { plan, version });
+        dirty.current = false;
+        setVersion(res.version);
+        setSave({ kind: "saved" });
+      } catch (e) {
+        const err = e as ApiError;
+        setSave(err.status === 409 ? { kind: "conflict", message: err.message } : { kind: "error", message: err.message });
+      }
+    }, 1200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan]);
+
+  const reloadLatest = async () => {
+    if (!cloud) return;
+    const res = await api<{ plan: Plan; version: number }>("GET", `/products/${cloud.productId}/plan`);
+    dirty.current = false;
+    setPlan(res.plan);
+    setVersion(res.version);
+    setSave({ kind: "saved" });
+  };
+
+  const issueCloudRevision = async (summary: string) => {
+    if (!cloud) throw new Error("Not in cloud mode");
+    if (dirty.current) {
+      const saved = await api<{ version: number }>("PUT", `/products/${cloud.productId}/plan`, { plan, version });
+      dirty.current = false;
+      setVersion(saved.version);
+    }
+    const res = await api<{ rev: string; fingerprint: string; statement: Record<string, unknown>; signature: Record<string, unknown>; version: number }>(
+      "POST",
+      `/products/${cloud.productId}/revisions`,
+      { summary },
+    );
+    setPlan((p) => ({
+      ...p,
+      revisions: [...p.revisions, { rev: res.rev, date: String(res.statement.issuedAt).slice(0, 10), summary, hash: res.fingerprint, approver: String(res.statement.approver) }],
+    }));
+    setVersion(res.version);
+    setSave({ kind: "saved" });
+    return res;
+  };
+
   const analysis = useMemo(() => analyzePlan(plan, today), [plan, today]);
   const markdown = useMemo(() => planToMarkdown(plan, analysis, fingerprint || "pending", formatDate(todayMs)), [plan, analysis, fingerprint, todayMs]);
 
   const update = (fn: (p: Plan) => Plan) => {
+    if (cloud && !cloud.canEdit) return;
     setIsExample(false);
+    dirty.current = true;
     setPlan((p) => withRisks(fn(p)));
   };
 
@@ -141,8 +213,122 @@ export function PlanBuilder() {
   const current = STEPS[step];
   const stepChecks = analysis.checks.filter((c) => c.step === current.id && !c.passed);
 
+  const saveLabel =
+    !cloud?.canEdit
+      ? "Your role can read this plan"
+      : save.kind === "saving"
+        ? "Saving…"
+        : save.kind === "dirty"
+          ? "Unsaved changes"
+          : save.kind === "error"
+            ? `Not saved: ${save.message}`
+            : save.kind === "conflict"
+              ? "Changed elsewhere"
+              : "All changes saved";
+
+  const strip = (
+    <div className="plan-toolbar control-strip">
+      <div className="cs-cell cs-wide">
+        <p className="cs-head">
+          <span className="label">Plan</span>
+          <span className="cs-note">
+            {cloud ? (
+              saveLabel
+            ) : isExample ? (
+              <>
+                <strong>Example</strong> for a fictional thermostat
+              </>
+            ) : (
+              importedNote || "Yours, saved in this browser"
+            )}
+          </span>
+        </p>
+        {cloud ? (
+          <div className="cs-control cs-start">
+            <p className="cs-plan-name">{plan.product.name || "Untitled plan"}</p>
+            <span className={`save-tag is-${cloud.canEdit ? save.kind : "view"}`}>{cloud.canEdit ? `v${version}` : "View only"}</span>
+          </div>
+        ) : isExample ? (
+          <div className="cs-control cs-start">
+            <select
+              id="start-industry"
+              aria-label="Start your own plan for a sector"
+              value=""
+              onChange={(e) => {
+                setPlan(withRisks(applyIndustry(emptyPlan(), e.target.value)));
+                setIsExample(false);
+                go(0);
+              }}
+            >
+              <option value="">Start yours: choose your sector…</option>
+              {industries.map((i) => (
+                <option key={i.slug} value={i.slug}>
+                  {i.name}
+                </option>
+              ))}
+            </select>
+            <button type="button" className="btn" onClick={startBlank}>
+              Start blank
+            </button>
+          </div>
+        ) : (
+          <div className="cs-control cs-start">
+            <p className="cs-plan-name">{plan.product.name || "Untitled plan"}</p>
+            <ConfirmButton label="New plan" confirmLabel="Clear this plan" onConfirm={startBlank} />
+          </div>
+        )}
+      </div>
+      <div className="cs-cell">
+        <p className="cs-head">
+          <span className="label">View</span>
+        </p>
+        <div className="cs-control seg" role="radiogroup" aria-label="View">
+          <button type="button" role="radio" aria-checked={view === "build"} onClick={() => setView("build")}>
+            Build
+          </button>
+          <button type="button" role="radio" aria-checked={view === "document"} onClick={() => setView("document")}>
+            Document
+          </button>
+        </div>
+      </div>
+      <div className="cs-cell">
+        <p className="cs-head">
+          <span className="label">Detail</span>
+        </p>
+        <div className="cs-control seg" role="radiogroup" aria-label="Detail level">
+          <button type="button" role="radio" aria-checked={!advanced} onClick={() => setAdvanced(false)}>
+            Simple
+          </button>
+          <button type="button" role="radio" aria-checked={advanced} onClick={() => setAdvanced(true)}>
+            Advanced
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="wrap stack" data-tool="plan">
+      {cloud ? (
+        <section className="sheet plan-cloud-bar" aria-label="Plan status">
+          {strip}
+          {save.kind === "conflict" && (
+            <div className="conflict-banner" role="alert">
+              <p>
+                <strong>Someone else saved this plan.</strong> {save.message} Your recent edits here are not saved.
+              </p>
+              <button type="button" className="btn btn-primary" onClick={reloadLatest}>
+                Load the latest version
+              </button>
+            </div>
+          )}
+          {save.kind === "error" && (
+            <p className="note-line" role="alert">
+              {save.message} Changes will retry on your next edit.
+            </p>
+          )}
+        </section>
+      ) : (
       <PageHero
         id="plan-title"
         tool="plan"
@@ -154,78 +340,9 @@ export function PlanBuilder() {
         lead="Eight short steps produce the technical documentation the CRA asks for. Gaps are never hidden; they become actions with owners and dates."
         aside={<PlanStatus analysis={analysis} />}
       >
-        <div className="plan-toolbar control-strip">
-          <div className="cs-cell cs-wide">
-            <p className="cs-head">
-              <span className="label">Plan</span>
-              <span className="cs-note">
-                {isExample ? (
-                  <>
-                    <strong>Example</strong> for a fictional thermostat
-                  </>
-                ) : (
-                  (importedNote ?? "Yours, saved in this browser")
-                )}
-              </span>
-            </p>
-            {isExample ? (
-              <div className="cs-control cs-start">
-                <select
-                  id="start-industry"
-                  aria-label="Start your own plan for a sector"
-                  value=""
-                  onChange={(e) => {
-                    setPlan(withRisks(applyIndustry(emptyPlan(), e.target.value)));
-                    setIsExample(false);
-                    go(0);
-                  }}
-                >
-                  <option value="">Start yours: choose your sector…</option>
-                  {industries.map((i) => (
-                    <option key={i.slug} value={i.slug}>
-                      {i.name}
-                    </option>
-                  ))}
-                </select>
-                <button type="button" className="btn" onClick={startBlank}>
-                  Start blank
-                </button>
-              </div>
-            ) : (
-              <div className="cs-control cs-start">
-                <p className="cs-plan-name">{plan.product.name || "Untitled plan"}</p>
-                <ConfirmButton label="New plan" confirmLabel="Clear this plan" onConfirm={startBlank} />
-              </div>
-            )}
-          </div>
-          <div className="cs-cell">
-            <p className="cs-head">
-              <span className="label">View</span>
-            </p>
-            <div className="cs-control seg" role="radiogroup" aria-label="View">
-              <button type="button" role="radio" aria-checked={view === "build"} onClick={() => setView("build")}>
-                Build
-              </button>
-              <button type="button" role="radio" aria-checked={view === "document"} onClick={() => setView("document")}>
-                Document
-              </button>
-            </div>
-          </div>
-          <div className="cs-cell">
-            <p className="cs-head">
-              <span className="label">Detail</span>
-            </p>
-            <div className="cs-control seg" role="radiogroup" aria-label="Detail level">
-              <button type="button" role="radio" aria-checked={!advanced} onClick={() => setAdvanced(false)}>
-                Simple
-              </button>
-              <button type="button" role="radio" aria-checked={advanced} onClick={() => setAdvanced(true)}>
-                Advanced
-              </button>
-            </div>
-          </div>
-        </div>
+        {strip}
       </PageHero>
+      )}
 
       {view === "build" && (
       <div className="plan-grid" ref={topRef}>
@@ -272,6 +389,7 @@ export function PlanBuilder() {
                 setPlan(withRisks({ ...emptyPlan(), ...p }));
                 setIsExample(false);
               }}
+              cloud={cloud ? { canApprove: cloud.canApprove, issue: issueCloudRevision } : undefined}
             />
           )}
 
@@ -1078,6 +1196,7 @@ function ReviewStep({
   today,
   onJump,
   onImport,
+  cloud,
 }: {
   plan: Plan;
   update: (fn: (p: Plan) => Plan) => void;
@@ -1086,8 +1205,12 @@ function ReviewStep({
   today: string;
   onJump: (s: Step) => void;
   onImport: (p: Plan) => void;
+  cloud?: { canApprove: boolean; issue: (summary: string) => Promise<{ rev: string; statement: Record<string, unknown>; signature: Record<string, unknown> }> };
 }) {
   const [summary, setSummary] = useState("");
+  const [signed, setSigned] = useState<{ rev: string; statement: Record<string, unknown>; signature: Record<string, unknown> } | null>(null);
+  const [issueError, setIssueError] = useState("");
+  const [issuing, setIssuing] = useState(false);
   const [approver, setApprover] = useState(plan.roles.productOwner);
   const [importText, setImportText] = useState("");
   const [importMsg, setImportMsg] = useState("");
@@ -1097,6 +1220,19 @@ function ReviewStep({
   const failing = analysis.checks.filter((c) => !c.passed).sort((a, b) => ["blocker", "gap", "advice"].indexOf(a.severity) - ["blocker", "gap", "advice"].indexOf(b.severity));
 
   const issue = async () => {
+    if (cloud) {
+      setIssuing(true);
+      setIssueError("");
+      try {
+        setSigned(await cloud.issue(summary.trim() || "Revision issued"));
+        setSummary("");
+      } catch (e) {
+        setIssueError((e as Error).message);
+      } finally {
+        setIssuing(false);
+      }
+      return;
+    }
     const hash = await fingerprintPlan(plan);
     update((x) => ({
       ...x,
@@ -1163,16 +1299,39 @@ function ReviewStep({
           </p>
         )}
         <p className="muted">
-          Issuing a revision records the date, approver and a SHA-512 fingerprint of the plan's content. Any later edit changes the
-          fingerprint, so an auditor can tell whether the document matches what was approved.
+          {cloud
+            ? "Issuing a revision records you as approver and has the server sign the plan's SHA-512 fingerprint with Ed25519 and ML-DSA-65 (post-quantum). Anyone can verify the signed statement; any later edit changes the fingerprint."
+            : "Issuing a revision records the date, approver and a SHA-512 fingerprint of the plan's content. Any later edit changes the fingerprint, so an auditor can tell whether the document matches what was approved."}
         </p>
         <div className="form-grid">
           <TextField id="rev-summary" label="What changed" value={summary} onChange={setSummary} placeholder="First issue for market launch" />
-          <TextField id="rev-approver" label="Approved by" value={approver} onChange={setApprover} />
+          {!cloud && <TextField id="rev-approver" label="Approved by" value={approver} onChange={setApprover} />}
         </div>
-        <button type="button" className="btn btn-primary" onClick={issue} disabled={!approver.trim()}>
-          Issue revision {nextRevisionLetter(plan.revisions)}
-        </button>
+        {cloud && !cloud.canApprove ? (
+          <p className="note-line">Only owners, admins and approvers can issue revisions.</p>
+        ) : (
+          <button type="button" className="btn btn-primary" onClick={issue} disabled={(!cloud && !approver.trim()) || issuing}>
+            {issuing ? "Signing…" : `Issue revision ${nextRevisionLetter(plan.revisions)}`}
+          </button>
+        )}
+        {issueError && (
+          <p className="note-line" role="alert">
+            {issueError}
+          </p>
+        )}
+        {signed && (
+          <div className="signed-box">
+            <p>
+              <strong>Revision {signed.rev} signed.</strong> Algorithm {String(signed.signature.alg)}, key {String(signed.signature.kid)}.
+            </p>
+            <div className="row">
+              <CopyButton label="Copy signed statement" getText={() => JSON.stringify({ statement: signed.statement, signature: signed.signature }, null, 2)} />
+              <a className="btn btn-quiet" href="/verify-signature/">
+                How to verify
+              </a>
+            </div>
+          </div>
+        )}
         {analysis.blockers.length > 0 && <p className="note-line">You can issue a draft revision now; it will record {analysis.blockers.length} blocking item(s) as open.</p>}
       </div>
 
@@ -1186,6 +1345,7 @@ function ReviewStep({
           guided: GUIDED,
         })}
       />
+      {!cloud && (
       <details className="backup">
         <summary className="label">Back up, move or clear this plan</summary>
         <div className="row">
@@ -1212,6 +1372,7 @@ function ReviewStep({
         </div>
         {importMsg && <p className="note-line">{importMsg}</p>}
       </details>
+      )}
       <p className="muted">Switch to the Document view to read the full plan and copy it as Markdown{canDownload ? " or download it" : ""}.</p>
     </div>
   );
