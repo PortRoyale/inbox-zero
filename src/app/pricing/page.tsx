@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Pricing, notes } from "@/components/sales/Pricing";
+import { faqNotes } from "@/content/faq";
+import { Pricing } from "@/components/sales/Pricing";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { faqPage, softwareApp } from "@/lib/seo/jsonld";
 
@@ -17,7 +18,7 @@ export default function PricingPage() {
       <main>
         <Pricing />
         <JsonLd data={softwareApp()} />
-        <JsonLd data={faqPage(notes)} />
+        <JsonLd data={faqPage(faqNotes)} />
       </main>
     </>
   );

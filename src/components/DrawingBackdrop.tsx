@@ -103,12 +103,12 @@ const MOTIFS: Record<Motif, React.ReactNode> = {
       <rect x="400" y="120" width="120" height="120" />
       <rect x="430" y="150" width="60" height="60" className="bd-hidden" />
       <circle cx="414" cy="134" r="4" />
-      {Array.from({ length: 7 }, (_, i) => 132 + i * 16).map((p) => (
-        <g key={p}>
-          <line x1={p + 4} y1="104" x2={p + 4} y2="120" />
-          <line x1={p + 4} y1="240" x2={p + 4} y2="256" />
-          <line x1="384" y1={p + 4} x2="400" y2={p + 4} />
-          <line x1="520" y1={p + 4} x2="536" y2={p + 4} />
+      {Array.from({ length: 7 }, (_, i) => 12 + i * 16).map((d) => (
+        <g key={d}>
+          <line x1={400 + d} y1="104" x2={400 + d} y2="120" />
+          <line x1={400 + d} y1="240" x2={400 + d} y2="256" />
+          <line x1="384" y1={120 + d} x2="400" y2={120 + d} />
+          <line x1="520" y1={120 + d} x2="536" y2={120 + d} />
         </g>
       ))}
     </>

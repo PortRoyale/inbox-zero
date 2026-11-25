@@ -597,7 +597,6 @@
 
 .doc h2 {
   font-size: var(--t-6);
-  font-family: var(--font-display);
 }
 
 .doc h3 {
@@ -605,7 +604,6 @@
   padding-top: var(--s-4);
   border-top: var(--lw-wide) solid var(--ink);
   font-size: var(--t-5);
-  font-family: var(--font-display);
 }
 
 .doc h4 {
@@ -780,11 +778,10 @@
   background: color-mix(in srgb, var(--highlight) 35%, var(--paper));
 }
 
-.link-grid a span:last-child {
+.link-grid a span + span {
   font-family: var(--font-code);
   font-size: var(--t-2);
   color: var(--ink-3);
-  white-space: nowrap;
 }
 
 .explorer-pickers {
@@ -1487,4 +1484,159 @@ details.template {
 
 .toolbar-field select {
   max-width: 15rem;
+}
+
+/* Side panels beside sheet tabs: compact padding */
+.tab-side > .sheet:not(.stepper) {
+  padding: var(--s-5) var(--s-4);
+}
+
+.tab-side .status-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.tab-side .status-tally > div {
+  padding: var(--s-2) var(--s-3);
+}
+
+.insp-item .seg,
+.ctl-row .seg {
+  align-self: flex-start;
+}
+
+.redline-item summary {
+  cursor: pointer;
+  list-style: none;
+  min-height: 2.25rem;
+}
+
+.redline-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.redline-item summary::after {
+  content: " + how to fix";
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.redline-item[open] summary::after {
+  content: " − hide";
+}
+
+.redline-item p {
+  margin-top: var(--s-3);
+  color: var(--ink-2);
+  max-width: var(--measure);
+}
+
+.redline-ref {
+  font-size: var(--t-1);
+  font-weight: 400;
+}
+
+.report .report-cta {
+  margin-block: 0 var(--s-7);
+}
+
+.redlines li {
+  padding-block: var(--s-3) !important;
+}
+
+.btn-small {
+  min-height: 2.5rem;
+  padding: var(--s-2) var(--s-4);
+}
+
+.variants tfoot th,
+.variants tfoot td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.variants tfoot th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.variants thead th.is-recommended {
+  background: var(--highlight);
+  color: var(--highlight-ink);
+}
+
+.variants td.is-recommended-cell {
+  background: color-mix(in srgb, var(--highlight) 30%, var(--paper));
+}
+
+.variants {
+  table-layout: fixed;
+  min-width: 36rem;
+}
+
+.variants .col-feature {
+  width: 36%;
+}
+
+.variants .col-plan {
+  width: 16%;
+}
+
+.form-error {
+  color: var(--redline);
+  font-size: var(--t-2);
+  font-weight: 700;
+}
+
+.brief-steps li {
+  grid-template-columns: 8.75rem minmax(0, 1fr);
+}
+
+.brief-steps .when {
+  white-space: nowrap;
+}
+
+@media (max-width: 30rem) {
+  .brief-steps li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-2);
+  }
+}
+
+@media (max-width: 40rem) {
+  .plan-toolbar {
+    align-items: stretch;
+  }
+  .toolbar-note {
+    flex-basis: 100%;
+  }
+  .toolbar-field {
+    flex: 1 1 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s-2);
+  }
+  .toolbar-field select {
+    max-width: none;
+  }
+  .toolbar-segs {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .foot-block > div:nth-child(-n + 3) {
+    display: none;
+  }
+}
+
+.link-grid a {
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2px;
 }

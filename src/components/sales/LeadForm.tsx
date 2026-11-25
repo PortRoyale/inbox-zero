@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { industries } from "@/content/industries";
 import { AreaField, SelectField, TextField } from "@/components/plan/fields";
 import { CopyButton } from "@/components/primitives";
@@ -8,9 +8,13 @@ import { site } from "@/lib/site";
 
 type State = "idle" | "sending" | "sent" | "fallback" | "error";
 
-export function LeadForm({ source = "pricing" }: { source?: string }) {
-  const [form, setForm] = useState({ name: "", email: "", company: "", sector: "", ship: "", message: "" });
+export function LeadForm({ source = "pricing", interest = "" }: { source?: string; interest?: string }) {
+  const [form, setForm] = useState({ name: "", email: "", company: "", sector: "", ship: "", plan: interest, message: "" });
+  useEffect(() => {
+    if (interest) setForm((f) => ({ ...f, plan: interest }));
+  }, [interest]);
   const [state, setState] = useState<State>("idle");
+  const [tried, setTried] = useState(false);
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
   const valid = form.name.trim() && /\S+@\S+\.\S+/.test(form.email) && form.company.trim();
 
@@ -21,6 +25,7 @@ export function LeadForm({ source = "pricing" }: { source?: string }) {
       `Company: ${form.company}`,
       `Sector: ${industries.find((i) => i.slug === form.sector)?.name ?? "Not given"}`,
       `Ships to EU: ${form.ship || "Not given"}`,
+      `Plan: ${form.plan || "Not chosen"}`,
       form.message && `Message: ${form.message}`,
     ]
       .filter(Boolean)
@@ -28,7 +33,10 @@ export function LeadForm({ source = "pricing" }: { source?: string }) {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!valid) return;
+    if (!valid) {
+      setTried(true);
+      return;
+    }
     if (!site.leadEndpoint) {
       setState("fallback");
       return;
@@ -79,14 +87,30 @@ export function LeadForm({ source = "pricing" }: { source?: string }) {
         ]}
         onChange={set("ship")}
       />
+      <SelectField
+        id={`lead-plan-${source}`}
+        label="Plan you're interested in"
+        value={form.plan}
+        options={[
+          { value: "", label: "Not sure yet" },
+          { value: "Starter", label: "Starter, €149/mo" },
+          { value: "Team", label: "Team, €499/mo" },
+          { value: "Guided", label: "Guided, from €6k" },
+        ]}
+        onChange={set("plan")}
+      />
       <div className="span-2">
         <AreaField id={`lead-msg-${source}`} label="Anything we should know? (optional)" rows={2} value={form.message} onChange={set("message")} />
       </div>
       <div className="span-2 row">
-        <button type="submit" className="btn btn-primary" disabled={!valid || state === "sending"}>
+        <button type="submit" className="btn btn-primary" disabled={state === "sending"}>
           {state === "sending" ? "Sending…" : "Request early access"}
         </button>
-        {!valid && <span className="hint">Name, work email and company are required.</span>}
+        {tried && !valid && (
+          <span className="form-error" role="alert">
+            Add your name, a work email and your company to send this.
+          </span>
+        )}
       </div>
       {state === "error" && <p className="span-2 note-line">That didn't go through. Email {site.contactEmail} instead, or try again.</p>}
       {state === "fallback" && (

@@ -37,7 +37,7 @@ export function PageHero({
           {above}
           <Fcf keyCell={label} cells={cells} />
           <H id={id} className="page-title">
-            {title}
+            {typeof title === "string" ? fixParens(title) : title}
           </H>
           {lead && <div className="lead">{lead}</div>}
           {actions && <div className="row">{actions}</div>}
@@ -46,5 +46,17 @@ export function PageHero({
       </div>
       {children}
     </section>
+  );
+}
+
+function fixParens(text: string) {
+  return text.split(/([()])/).map((part, i) =>
+    part === "(" || part === ")" ? (
+      <span key={i} className="paren">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
   );
 }

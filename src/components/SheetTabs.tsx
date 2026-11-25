@@ -21,6 +21,7 @@ export function SheetTabs({
   side,
   value,
   onValueChange,
+  id,
 }: {
   items: SheetTab[];
   label: string;
@@ -28,6 +29,7 @@ export function SheetTabs({
   side?: React.ReactNode;
   value?: number;
   onValueChange?: (i: number) => void;
+  id?: string;
 }) {
   const [inner, setInner] = useState(0);
   const active = Math.min(value ?? inner, items.length - 1);
@@ -53,7 +55,7 @@ export function SheetTabs({
   };
 
   return (
-    <div className="plan-grid sheet-tabs" ref={topRef}>
+    <div className="plan-grid sheet-tabs" ref={topRef} id={id}>
       <div className="tab-side">
         <nav className="stepper sheet" aria-label={label}>
           <ol role="tablist" aria-orientation="vertical">

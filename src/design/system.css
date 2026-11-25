@@ -156,9 +156,14 @@ ul {
   list-style: none;
 }
 
-h1,
-h2 {
+h1 {
   font-family: var(--font-display);
+}
+
+/* B612 draws ( ) like [ ]: parentheses in display titles are set in the text face. */
+.paren {
+  font-family: var(--font-text);
+  font-weight: 700;
 }
 
 h1,

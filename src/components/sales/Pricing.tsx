@@ -1,8 +1,13 @@
+"use client";
+
+import { useState } from "react";
+import { faqNotes as notes } from "@/content/faq";
 import { PageHero } from "@/components/PageHero";
 import { ContactLine } from "@/components/primitives";
 import { CostCalculator } from "@/components/sales/CostCalculator";
 import { LeadForm } from "@/components/sales/LeadForm";
 import { SheetTabs } from "@/components/SheetTabs";
+import { paths } from "@/lib/paths";
 
 const variants = [
   { code: "-00", name: "Free", price: "€0" },
@@ -17,7 +22,7 @@ const features: [string, (boolean | string)[]][] = [
   ["Saved plans and release records in the cloud", [false, true, true, true]],
   ["SBOM watch", [false, true, true, true]],
   ["Disclosure kit", [false, true, true, true]],
-  ["Products covered", ["None", "1", "up to 5", "up to 5"]],
+  ["Products covered", ["In browser", "1", "Up to 5", "Up to 5"]],
   ["Reporting playbook", [false, false, true, true]],
   ["Sign-off roles, GitHub and Jira", [false, false, true, true]],
   ["Threat-model workshop with an expert", [false, false, false, true]],
@@ -31,34 +36,17 @@ const comparison = [
   { option: "Readyline", cost: "€0–499/mo + optional €6k", gets: "Plan builder, release records, monitoring, expert review", missing: "A notified-body certificate, where your class requires one", ours: true },
 ];
 
-export const notes = [
-  {
-    q: "Does the Cyber Resilience Act apply to my company?",
-    a: "If you place a product with digital elements on the EU market, meaning hardware or software that connects to a device or a network, it most likely does, wherever your company is based.",
-  },
-  {
-    q: "We only run a SaaS product. Is that in scope?",
-    a: "Pure SaaS falls under NIS2 rather than the CRA. A cloud service your product needs in order to work counts as remote data processing and is in scope.",
-  },
-  {
-    q: "What are the deadlines?",
-    a: "Reporting of actively exploited vulnerabilities and severe incidents has applied since 11 September 2026. Everything else, including the essential requirements, technical documentation and CE marking, applies from 11 December 2027.",
-  },
-  {
-    q: "What happens if we're not compliant?",
-    a: "Authorities can order corrective action, withdraw products from the market, and fine up to €15 million or 2.5% of worldwide annual turnover, whichever is higher.",
-  },
-  {
-    q: "We're a small company. Are there exemptions?",
-    a: "Not from the requirements. Micro and small enterprises can't be fined for missing the 24-hour early-warning deadline, and the Commission is preparing a simplified technical documentation form for them. Our tooling follows that simplified path.",
-  },
-  {
-    q: "Is this legal advice?",
-    a: "No. It is tooling and expert guidance for building and evidencing a security programme. Ask qualified counsel how the law applies to your situation.",
-  },
-];
+
+const JOIN_TAB = 4;
 
 export function Pricing() {
+  const [tab, setTab] = useState(0);
+  const [interest, setInterest] = useState("");
+  const choose = (plan: string) => {
+    setInterest(plan);
+    setTab(JOIN_TAB);
+    requestAnimationFrame(() => document.getElementById("pricing-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
   return (
     <div className="wrap stack">
       <PageHero
@@ -67,7 +55,7 @@ export function Pricing() {
         seed={41}
         label="Pricing"
         cells={["Early access"]}
-        title="Priced for a five-person team"
+        title="Priced for small product teams"
         lead="Free tools to start. A subscription when you want plans saved, monitored and signed off. An expert when you want it done with you. Founding customers lock in these prices."
         aside={
           <div className="grant-card">
@@ -81,6 +69,9 @@ export function Pricing() {
 
       <SheetTabs
         label="Pricing sections"
+        id="pricing-tabs"
+        value={tab}
+        onValueChange={setTab}
         items={[
           {
             id: "plans",
@@ -90,11 +81,17 @@ export function Pricing() {
                 <h2>Plans</h2>
                 <div className="table-scroll">
                   <table className="drawing variants">
+                    <colgroup>
+                      <col className="col-feature" />
+                      {variants.map((v) => (
+                        <col key={v.code} className="col-plan" />
+                      ))}
+                    </colgroup>
                     <thead>
                       <tr>
                         <th scope="col">Feature</th>
                         {variants.map((v) => (
-                          <th key={v.code} scope="col">
+                          <th key={v.code} scope="col" className={v.name === "Starter" ? "is-recommended" : undefined}>
                             <span className="variant-code">{v.code}</span>
                             <span className="variant-name">{v.name}</span>
                             <span className="variant-price">{v.price}</span>
@@ -114,8 +111,34 @@ export function Pricing() {
                         </tr>
                       ))}
                     </tbody>
+                    <tfoot>
+                      <tr>
+                        <th scope="row">Choose</th>
+                        <td>
+                          <a className="btn btn-small" href={paths.plan}>
+                            Start free
+                          </a>
+                        </td>
+                        <td className="is-recommended-cell">
+                          <button type="button" className="btn btn-primary btn-small" onClick={() => choose("Starter")}>
+                            Join
+                          </button>
+                        </td>
+                        <td>
+                          <button type="button" className="btn btn-small" onClick={() => choose("Team")}>
+                            Join
+                          </button>
+                        </td>
+                        <td>
+                          <button type="button" className="btn btn-small" onClick={() => choose("Guided")}>
+                            Book call
+                          </button>
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
+                <p className="muted">Starter is recommended for one product. Prices exclude VAT. Cancel any time.</p>
               </>
             ),
           },
@@ -189,7 +212,7 @@ export function Pricing() {
               <div id="contact" className="stack-sm">
                 <h2>Join early access</h2>
                 <p className="muted">Founding customers lock in these prices. A security expert replies within one working day.</p>
-                <LeadForm />
+                <LeadForm interest={interest} />
                 <ContactLine />
               </div>
             ),

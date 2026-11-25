@@ -10,7 +10,6 @@ import { categories, productTypes, requirementsFor, type ProductType, type Requi
 import { assessmentReportText } from "@/lib/report-text";
 import { paths } from "@/lib/paths";
 import { PLAN_FROM_ASSESSMENT_KEY } from "@/lib/plan/storage";
-import { regulation } from "@/lib/site";
 
 const STORAGE_KEY = "cra-assessment-v1";
 
@@ -266,6 +265,7 @@ function Report({
 }) {
   const today = useToday();
   const band = readinessBand(score.percent);
+  const weakest = [...score.byCategory].sort((a, b) => a.percent - b.percent)[0];
   const typeLabels = productTypes.filter((t) => types.includes(t.id)).map((t) => t.label);
   const date = formatDate(today);
 
@@ -303,8 +303,8 @@ function Report({
             <dd className="code">{score.criticalGaps}</dd>
           </div>
           <div>
-            <dt>Instrument</dt>
-            <dd>{regulation}</dd>
+            <dt>Weakest area</dt>
+            <dd>{weakest ? `${weakest.label} (${weakest.percent}%)` : "None"}</dd>
           </div>
         </dl>
         <ul className="areas">
@@ -320,28 +320,6 @@ function Report({
             </li>
           ))}
         </ul>
-      </div>
-
-      <div className="redlines">
-        <Fcf redline keyCell="Redline list" cells={["Highest priority first"]} />
-        {score.gaps.length === 0 ? (
-          <p>No gaps among the items you answered. Keep the evidence on file.</p>
-        ) : (
-          <ol>
-            {score.gaps.map((g) => (
-              <li key={g.id}>
-                <span className="redline-id code">{itemIds[g.id]}</span>
-                <div>
-                  <p className="redline-title">
-                    {g.title} <span className={`prio prio-${g.priority}`}>{g.priority}</span>
-                  </p>
-                  <p>{g.guidance}</p>
-                  <p className="code muted">CRA ref. {g.craRef}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
       </div>
 
       <div className="report-cta">
@@ -363,6 +341,30 @@ function Report({
           Build my plan from these answers
         </a>
       </div>
+      <div className="redlines">
+        <Fcf redline keyCell="Redline list" cells={["Highest priority first"]} />
+        {score.gaps.length === 0 ? (
+          <p>No gaps among the items you answered. Keep the evidence on file.</p>
+        ) : (
+          <ol>
+            {score.gaps.map((g) => (
+              <li key={g.id}>
+                <span className="redline-id code">{itemIds[g.id]}</span>
+                <details className="redline-item">
+                  <summary>
+                    <span className="redline-title">
+                      {g.title} <span className={`prio prio-${g.priority}`}>{g.priority}</span>
+                      <span className="code muted redline-ref">{g.craRef}</span>
+                    </span>
+                  </summary>
+                  <p>{g.guidance}</p>
+                </details>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
       <div className="report-help">
         <p>Want a security expert to review this with you?</p>
         <ContactLine />
