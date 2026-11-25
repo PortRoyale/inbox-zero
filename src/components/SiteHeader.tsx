@@ -1,33 +1,42 @@
-import Link from "next/link";
-import { Logo } from "@/components/Logo";
+import { paths, type View } from "@/lib/paths";
+import { site } from "@/lib/site";
 
 const nav = [
-  { href: "/assessment/", label: "Readiness check" },
-  { href: "/release-gate/", label: "Release gate" },
-  { href: "/#pricing", label: "Pricing" },
-  { href: "/#faq", label: "FAQ" },
-];
+  { href: paths.assessment, label: "Readiness check", view: "assessment" },
+  { href: paths.releaseGate, label: "Release gate", view: "release-gate" },
+  { href: paths.pricing, label: "Pricing", view: null },
+  { href: paths.notes, label: "Notes", view: null },
+] as const;
 
-export function SiteHeader() {
+export function SiteHeader({ current }: { current?: View }) {
+  const links = (
+    <nav aria-label="Main">
+      {nav.map((item) => (
+        <a key={item.href} href={item.href} aria-current={item.view && item.view === current ? "page" : undefined}>
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  );
   return (
-    <header className="no-print sticky top-0 z-20 border-b border-line bg-white/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" aria-label="Home">
-          <Logo />
-        </Link>
-        <nav className="hidden items-center gap-6 text-sm text-ink-soft md:flex">
-          {nav.map((item) => (
-            <Link key={item.href} href={item.href} className="hover:text-ink">
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <Link
-          href="/assessment/"
-          className="rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white hover:bg-brand-strong"
-        >
-          Free assessment
-        </Link>
+    <header className="masthead">
+      <div className="wrap">
+        <a className="wordmark" href={paths.home} aria-label={`${site.name} home`}>
+          <span aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18">
+              <circle cx="9" cy="9" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M9 0v18M0 9h18" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
+          </span>
+          <span>{site.name.toUpperCase()}</span>
+        </a>
+        <div className="masthead-nav-wide">{links}</div>
+        <a className="btn btn-primary masthead-cta" href={paths.assessment}>
+          Free check
+        </a>
+      </div>
+      <div className="masthead-nav-narrow">
+        <div className="wrap">{links}</div>
       </div>
     </header>
   );

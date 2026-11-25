@@ -1,44 +1,29 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Balloon, ConfirmButton, ContactLine, CopyButton, Fcf, RedPen } from "@/components/primitives";
+import { formatDate, useToday } from "@/components/Timeline";
 import { readinessBand, scoreAssessment, type Answers, type AnswerStatus } from "@/lib/assessment-score";
-import {
-  categories,
-  productTypes,
-  requirementsFor,
-  type Priority,
-  type ProductType,
-  type Requirement,
-} from "@/lib/cra-requirements";
-import { site } from "@/lib/site";
+import { categories, productTypes, requirementsFor, type ProductType, type Requirement } from "@/lib/cra-requirements";
+import { assessmentReportText } from "@/lib/report-text";
+import { regulation } from "@/lib/site";
 
 const STORAGE_KEY = "cra-assessment-v1";
 
-const statusOptions: { value: AnswerStatus; label: string; active: string }[] = [
-  { value: "done", label: "Yes", active: "border-good bg-good-tint text-good" },
-  { value: "partial", label: "Partly", active: "border-ok bg-ok-tint text-ok" },
-  { value: "missing", label: "No", active: "border-bad bg-bad-tint text-bad" },
-  { value: "na", label: "N/A", active: "border-ink-soft bg-paper text-ink-soft" },
+const statusOptions: { value: AnswerStatus; label: string }[] = [
+  { value: "done", label: "Yes" },
+  { value: "partial", label: "Partly" },
+  { value: "missing", label: "No" },
+  { value: "na", label: "N/A" },
 ];
 
-const priorityStyle: Record<Priority, string> = {
-  critical: "bg-bad-tint text-bad",
-  high: "bg-warn-tint text-warn",
-  standard: "bg-paper text-muted",
-};
-
-const toneStyle = {
-  good: { text: "text-good", bar: "bg-good", tint: "bg-good-tint" },
-  ok: { text: "text-ok", bar: "bg-ok", tint: "bg-ok-tint" },
-  warn: { text: "text-warn", bar: "bg-warn", tint: "bg-warn-tint" },
-  bad: { text: "text-bad", bar: "bg-bad", tint: "bg-bad-tint" },
-};
+const SECTION_LETTERS = "ABCDEF";
 
 type Saved = { productName: string; types: ProductType[]; answers: Answers };
 
 export function Assessment() {
   const [productName, setProductName] = useState("");
-  const [types, setTypes] = useState<ProductType[]>([]);
+  const [types, setTypes] = useState<ProductType[]>(["hardware", "firmware"]);
   const [answers, setAnswers] = useState<Answers>({});
   const [loaded, setLoaded] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -53,7 +38,7 @@ export function Assessment() {
         setAnswers(saved.answers ?? {});
       }
     } catch {
-      // Storage may be unavailable (private mode); the tool still works without it.
+      // Storage can be unavailable (private mode, embedded viewers); the tool works without it.
     }
     setLoaded(true);
   }, []);
@@ -63,20 +48,23 @@ export function Assessment() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ productName, types, answers } satisfies Saved));
     } catch {
-      // Ignore storage failures; persistence is a convenience only.
+      // Persistence is a convenience only.
     }
   }, [loaded, productName, types, answers]);
 
   const reqs = useMemo(() => requirementsFor(types), [types]);
   const score = useMemo(() => scoreAssessment(reqs, answers), [reqs, answers]);
+  const itemIds = useMemo(() => buildItemIds(reqs), [reqs]);
+
+  const statusCounts = statusOptions.map((o) => ({
+    ...o,
+    count: reqs.filter((r) => answers[r.id] === o.value).length,
+  }));
 
   const toggleType = (t: ProductType) =>
     setTypes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
-  const setAnswer = (id: string, status: AnswerStatus) => setAnswers((prev) => ({ ...prev, [id]: status }));
-
   const reset = () => {
-    if (!window.confirm("Clear all answers and start again?")) return;
     setProductName("");
     setTypes([]);
     setAnswers({});
@@ -85,266 +73,319 @@ export function Assessment() {
 
   const openResults = () => {
     setShowResults(true);
-    requestAnimationFrame(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }));
+    requestAnimationFrame(() => document.getElementById("report")?.scrollIntoView({ behavior: "smooth" }));
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-14">
-      <div className="no-print max-w-3xl">
-        <p className="text-sm font-semibold tracking-wide text-brand uppercase">Free tool</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">CRA readiness check</h1>
-        <p className="mt-3 text-lg text-ink-soft">
-          Answer honestly. “Partly” is a perfectly good answer. Your answers are saved in this browser only and never
-          leave your device.
-        </p>
-      </div>
-
-      <section className="no-print mt-10 rounded-xl border border-line p-5 sm:p-6">
-        <h2 className="font-semibold text-ink">1. About your product</h2>
-        <label className="mt-4 block max-w-md text-sm font-medium text-ink-soft">
-          Product name <span className="font-normal text-muted">(optional, shown on your report)</span>
-          <input
-            value={productName}
-            onChange={(e) => setProductName(e.target.value)}
-            placeholder="e.g. Smart thermostat v2"
-            className="mt-1.5 block w-full rounded-md border border-line px-3 py-2 text-ink placeholder:text-muted"
-          />
-        </label>
-        <fieldset className="mt-5">
-          <legend className="text-sm font-medium text-ink-soft">What does it include? Select all that apply.</legend>
-          <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {productTypes.map((t) => {
-              const checked = types.includes(t.id);
-              return (
-                <label
-                  key={t.id}
-                  className={`flex cursor-pointer gap-3 rounded-lg border p-3.5 transition ${
-                    checked ? "border-brand bg-brand-tint" : "border-line hover:border-ink-soft"
-                  }`}
-                >
-                  <input type="checkbox" checked={checked} onChange={() => toggleType(t.id)} className="mt-1 accent-brand" />
-                  <span>
-                    <span className="block text-sm font-medium text-ink">{t.label}</span>
-                    <span className="block text-xs text-muted">{t.hint}</span>
-                  </span>
-                </label>
-              );
-            })}
+    <div className="wrap stack">
+      <section className="sheet" aria-labelledby="assess-title">
+        <div className="sheet-head">
+          <div>
+            <Fcf keyCell="Free tool" cells={["Inspection sheet", "Annex I"]} />
+            <h1 id="assess-title" className="page-title">
+              CRA readiness check
+            </h1>
+            <p className="lead">
+              Answer honestly; “Partly” is a perfectly good answer. Your answers are saved in this browser only and never
+              leave your device.
+            </p>
           </div>
-        </fieldset>
+        </div>
+
+        <div className="setup">
+          <label className="field" htmlFor="product-name">
+            <span className="label">Product name (optional)</span>
+            <input
+              id="product-name"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              placeholder="e.g. Smart thermostat v2"
+            />
+          </label>
+          <fieldset className="types">
+            <legend className="label">What does it include? Select all that apply.</legend>
+            <div className="types-grid">
+              {productTypes.map((t) => {
+                const checked = types.includes(t.id);
+                return (
+                  <label key={t.id} className={`type-option${checked ? " is-checked" : ""}`} htmlFor={`type-${t.id}`}>
+                    <input id={`type-${t.id}`} type="checkbox" checked={checked} onChange={() => toggleType(t.id)} />
+                    <span>
+                      <strong>{t.label}</strong>
+                      <span className="muted">{t.hint}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        </div>
       </section>
 
       {types.length === 0 ? (
-        <p className="no-print mt-8 rounded-lg bg-paper p-5 text-ink-soft">Select at least one product type to see the questions.</p>
+        <p className="sheet empty-state">
+          <span className="label">Waiting for input</span>
+          Select at least one product type above. The inspection items are filtered to what your product includes.
+        </p>
       ) : (
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_300px] lg:items-start">
-          <div className="no-print space-y-8">
-            <h2 className="font-semibold text-ink">2. Security requirements ({reqs.length})</h2>
-            {categories.map((cat) => {
+        <div className="tool-grid">
+          <div className="tool-main">
+            {categories.map((cat, ci) => {
               const inCat = reqs.filter((r) => r.category === cat.id);
               if (inCat.length === 0) return null;
               return (
-                <section key={cat.id}>
-                  <h3 className="text-sm font-semibold tracking-wide text-muted uppercase">{cat.label}</h3>
-                  <div className="mt-3 space-y-3">
-                    {inCat.map((r) => (
-                      <QuestionCard key={r.id} req={r} value={answers[r.id]} onChange={(s) => setAnswer(r.id, s)} />
-                    ))}
+                <section key={cat.id} className="sheet insp-section" aria-labelledby={`sec-${cat.id}`}>
+                  <div className="insp-section-head">
+                    <Fcf keyCell={`Section ${SECTION_LETTERS[ci]}`} cells={[`${inCat.length} items`]} />
+                    <h2 id={`sec-${cat.id}`}>{cat.label}</h2>
                   </div>
+                  <ol className="insp-list">
+                    {inCat.map((r) => (
+                      <InspectionItem
+                        key={r.id}
+                        req={r}
+                        itemId={itemIds[r.id]}
+                        value={answers[r.id]}
+                        onChange={(s) => setAnswers((prev) => ({ ...prev, [r.id]: s }))}
+                      />
+                    ))}
+                  </ol>
                 </section>
               );
             })}
           </div>
 
-          <aside className="no-print lg:sticky lg:top-24">
-            <div className="rounded-xl border border-line p-5">
-              <p className="text-sm text-ink-soft">Progress</p>
-              <p className="mt-1 text-2xl font-semibold text-ink tabular-nums">
-                {score.answeredCount} <span className="text-base font-normal text-muted">/ {score.total} answered</span>
+          <aside className="tool-aside">
+            <div className="sheet status-panel">
+              <p className="label">Inspection status</p>
+              <p className="status-count code">
+                {score.answeredCount}
+                <span className="muted"> / {score.total}</span>
               </p>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-paper">
-                <div
-                  className="h-full rounded-full bg-brand transition-all"
-                  style={{ width: `${score.total ? (score.answeredCount / score.total) * 100 : 0}%` }}
-                />
+              <div className="gauge" role="progressbar" aria-valuemin={0} aria-valuemax={score.total} aria-valuenow={score.answeredCount} aria-label="Items answered">
+                <span style={{ width: `${score.total ? (score.answeredCount / score.total) * 100 : 0}%` }} />
               </div>
-              <button
-                type="button"
-                onClick={openResults}
-                disabled={score.answeredCount === 0}
-                className="mt-5 w-full rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {score.complete ? "See my results" : "See results so far"}
+              <dl className="status-tally">
+                {statusCounts.map((s) => (
+                  <div key={s.value}>
+                    <dt>
+                      <span className={`swatch swatch-${s.value}`} aria-hidden="true" />
+                      {s.label}
+                    </dt>
+                    <dd className="code">{s.count}</dd>
+                  </div>
+                ))}
+              </dl>
+              <button type="button" className="btn btn-primary" onClick={openResults} disabled={score.answeredCount === 0}>
+                {score.complete ? "See my report" : "See report so far"}
               </button>
-              <button type="button" onClick={reset} className="mt-2 w-full rounded-md px-4 py-2 text-sm text-muted hover:text-ink">
-                Start over
-              </button>
+              <ConfirmButton label="Start over" confirmLabel="Clear all answers" onConfirm={reset} />
             </div>
           </aside>
         </div>
       )}
 
       {showResults && score.answeredCount > 0 && (
-        <Results productName={productName} types={types} score={score} />
+        <Report productName={productName} types={types} score={score} itemIds={itemIds} />
       )}
     </div>
   );
 }
 
-function QuestionCard({
+function InspectionItem({
   req,
+  itemId,
   value,
   onChange,
 }: {
   req: Requirement;
+  itemId: string;
   value: AnswerStatus | undefined;
   onChange: (s: AnswerStatus) => void;
 }) {
+  const titleId = `item-${req.id}`;
   return (
-    <div className="rounded-xl border border-line p-4 sm:p-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <h4 className="font-medium text-ink">{req.title}</h4>
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${priorityStyle[req.priority]}`}>
-          {req.priority}
-        </span>
-      </div>
-      <p className="mt-1.5 text-ink-soft">{req.question}</p>
-      <details className="mt-2 text-sm">
-        <summary className="cursor-pointer text-brand hover:underline">What good looks like</summary>
-        <p className="mt-2 text-ink-soft">{req.guidance}</p>
-        <p className="mt-1 text-xs text-muted">CRA reference: {req.craRef}</p>
-      </details>
-      <div className="mt-4 flex flex-wrap gap-2" role="radiogroup" aria-label={req.title}>
-        {statusOptions.map((o) => {
-          const active = value === o.value;
-          return (
+    <li className={`insp-item${value ? ` is-${value}` : ""}`}>
+      <Balloon>{itemId}</Balloon>
+      <div className="insp-body">
+        <div className="insp-title-row">
+          <h3 id={titleId}>
+            <span className={`mark${value && value !== "missing" ? ` mark-${value}` : ""}`}>
+              {req.title}
+              {value === "missing" && <RedPen />}
+            </span>
+          </h3>
+          <span className={`prio prio-${req.priority}`}>{req.priority}</span>
+        </div>
+        <p className="insp-q">{req.question}</p>
+        <details className="insp-more">
+          <summary>What good looks like</summary>
+          <p>{req.guidance}</p>
+          <p className="code muted">CRA ref. {req.craRef}</p>
+        </details>
+        <div className="seg" role="radiogroup" aria-labelledby={titleId}>
+          {statusOptions.map((o) => (
             <button
               key={o.value}
               type="button"
               role="radio"
-              aria-checked={active}
+              data-status={o.value}
+              aria-checked={value === o.value}
               onClick={() => onChange(o.value)}
-              className={`min-w-16 rounded-md border px-3 py-1.5 text-sm font-medium transition ${
-                active ? o.active : "border-line text-ink-soft hover:border-ink-soft"
-              }`}
             >
               {o.label}
             </button>
-          );
-        })}
+          ))}
+        </div>
       </div>
-    </div>
+    </li>
   );
 }
 
-function Results({
+function Report({
   productName,
   types,
   score,
+  itemIds,
 }: {
   productName: string;
   types: ProductType[];
   score: ReturnType<typeof scoreAssessment>;
+  itemIds: Record<string, string>;
 }) {
+  const today = useToday();
   const band = readinessBand(score.percent);
-  const tone = toneStyle[band.tone];
   const typeLabels = productTypes.filter((t) => types.includes(t.id)).map((t) => t.label);
-  const generatedOn = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const date = formatDate(today);
 
   return (
-    <section id="results" className="mt-14 scroll-mt-24 border-t border-line pt-10">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <section id="report" className="sheet report" aria-labelledby="report-title">
+      <div className="sheet-head">
         <div>
-          <p className="text-sm font-semibold tracking-wide text-brand uppercase">Your report</p>
-          <h2 className="mt-1 text-2xl font-semibold text-ink sm:text-3xl">
-            {productName ? `${productName}: CRA readiness` : "CRA readiness report"}
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            {typeLabels.join(" · ")} · {generatedOn}
-            {!score.complete && ` · ${score.total - score.answeredCount} questions unanswered`}
+          <Fcf keyCell="Inspection report" cells={[date, `${score.answeredCount}/${score.total} answered`]} />
+          <h2 id="report-title">{productName ? `${productName}: CRA readiness` : "CRA readiness report"}</h2>
+          <p className="muted">{typeLabels.join(" · ")}</p>
+        </div>
+        <CopyButton
+          label="Copy report as text"
+          getText={() => assessmentReportText({ productName, productTypes: typeLabels, date, score, itemIds })}
+        />
+      </div>
+
+      <div className="report-summary">
+        <div className="scale-block">
+          <p className="label">Readiness score</p>
+          <p className="big-figure code">
+            {score.percent}
+            <span>%</span>
           </p>
+          <ReadinessScale percent={score.percent} />
+          <p className={`band band-${band.tone}`}>{band.label}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="no-print rounded-md border border-line px-4 py-2 text-sm font-medium text-ink hover:border-ink-soft"
-        >
-          Print / save as PDF
-        </button>
-      </div>
-
-      <div className="mt-8 grid gap-5 md:grid-cols-3">
-        <div className={`rounded-xl p-6 ${tone.tint}`}>
-          <p className="text-sm text-ink-soft">Readiness score</p>
-          <p className={`mt-1 text-5xl font-semibold tabular-nums ${tone.text}`}>{score.percent}%</p>
-          <p className={`mt-1 font-medium ${tone.text}`}>{band.label}</p>
-        </div>
-        <div className="rounded-xl border border-line p-6">
-          <p className="text-sm text-ink-soft">Open gaps</p>
-          <p className="mt-1 text-5xl font-semibold text-ink tabular-nums">{score.gaps.length}</p>
-          <p className="mt-1 text-sm text-muted">including {score.criticalGaps} critical</p>
-        </div>
-        <div className="rounded-xl border border-line p-6">
-          <p className="text-sm text-ink-soft">By area</p>
-          <ul className="mt-3 space-y-2.5">
-            {score.byCategory.map((c) => {
-              const t = toneStyle[readinessBand(c.percent).tone];
-              return (
-                <li key={c.id} className="text-sm">
-                  <div className="flex justify-between gap-2">
-                    <span className="text-ink-soft">{c.label}</span>
-                    <span className="font-medium text-ink tabular-nums">{c.percent}%</span>
-                  </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-paper">
-                    <div className={`h-full rounded-full ${t.bar}`} style={{ width: `${c.percent}%` }} />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </div>
-
-      <h3 className="mt-10 text-lg font-semibold text-ink">Prioritised action plan</h3>
-      {score.gaps.length === 0 ? (
-        <p className="mt-3 text-ink-soft">No gaps among the questions you answered. Keep the evidence on file.</p>
-      ) : (
-        <ol className="mt-4 space-y-3">
-          {score.gaps.map((g, i) => (
-            <li key={g.id} className="flex gap-4 rounded-xl border border-line p-4 break-inside-avoid">
-              <span className="font-mono text-sm text-muted tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium text-ink">{g.title}</p>
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${priorityStyle[g.priority]}`}>
-                    {g.priority}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-ink-soft">{g.guidance}</p>
-                <p className="mt-1 text-xs text-muted">CRA reference: {g.craRef}</p>
+        <dl className="tblock report-tblock">
+          <div>
+            <dt>Open gaps</dt>
+            <dd className="code">{score.gaps.length}</dd>
+          </div>
+          <div>
+            <dt>Critical gaps</dt>
+            <dd className="code">{score.criticalGaps}</dd>
+          </div>
+          <div>
+            <dt>Instrument</dt>
+            <dd>{regulation}</dd>
+          </div>
+        </dl>
+        <ul className="areas">
+          {score.byCategory.map((c) => (
+            <li key={c.id}>
+              <div className="area-row">
+                <span>{c.label}</span>
+                <span className="code">{c.percent}%</span>
+              </div>
+              <div className="gauge">
+                <span style={{ width: `${c.percent}%` }} />
               </div>
             </li>
           ))}
-        </ol>
-      )}
-
-      <div className="no-print mt-10 rounded-xl bg-ink p-6 text-white sm:p-8">
-        <h3 className="text-xl font-semibold">Want help closing these gaps?</h3>
-        <p className="mt-2 max-w-2xl text-white/75">
-          Early-access customers get the security plan builder, SBOM monitoring and a reporting playbook, plus a review
-          of this report with a security expert.
-        </p>
-        <a
-          href={`mailto:${site.contactEmail}?subject=CRA%20readiness%20report%20(${score.percent}%25)`}
-          className="mt-5 inline-block rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-ink hover:bg-brand-tint"
-        >
-          Book a free review
-        </a>
+        </ul>
       </div>
 
-      <p className="mt-6 text-xs text-muted">
-        This self-assessment is guidance, not legal advice or a conformity assessment. Generated with {site.name}.
-      </p>
+      <div className="redlines">
+        <Fcf redline keyCell="Redline list" cells={["Highest priority first"]} />
+        {score.gaps.length === 0 ? (
+          <p>No gaps among the items you answered. Keep the evidence on file.</p>
+        ) : (
+          <ol>
+            {score.gaps.map((g) => (
+              <li key={g.id}>
+                <span className="redline-id code">{itemIds[g.id]}</span>
+                <div>
+                  <p className="redline-title">
+                    {g.title} <span className={`prio prio-${g.priority}`}>{g.priority}</span>
+                  </p>
+                  <p>{g.guidance}</p>
+                  <p className="code muted">CRA ref. {g.craRef}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
+      <div className="report-cta">
+        <div>
+          <h3>Want help closing these gaps?</h3>
+          <p>Early-access customers get the security plan builder, SBOM watch and a review of this report with a security expert.</p>
+        </div>
+        <ContactLine />
+      </div>
+      <p className="label">Self-assessment guidance. Not legal advice or a conformity assessment.</p>
     </section>
   );
+}
+
+function ReadinessScale({ percent }: { percent: number }) {
+  const ticks = Array.from({ length: 11 }, (_, i) => i * 10);
+  const zones = [
+    { from: 0, to: 30, label: "Early" },
+    { from: 30, to: 60, label: "Gaps" },
+    { from: 60, to: 85, label: "Progress" },
+    { from: 85, to: 100, label: "Ready" },
+  ];
+  const x = (v: number) => 16 + (v / 100) * 368;
+  return (
+    <svg className="scale" viewBox="0 0 400 74" role="img" aria-label={`Score ${percent} out of 100`}>
+      {zones.map((z) => (
+        <g key={z.label}>
+          <line x1={x(z.from)} y1="10" x2={x(z.from)} y2="22" stroke="var(--ink)" strokeWidth="1" />
+          <text x={(x(z.from) + x(z.to)) / 2} y="16" textAnchor="middle" className="scale-zone">
+            {z.label}
+          </text>
+        </g>
+      ))}
+      <line x1={x(0)} y1="34" x2={x(100)} y2="34" stroke="var(--ink)" strokeWidth="2" />
+      {ticks.map((v) => (
+        <g key={v}>
+          <line x1={x(v)} y1="34" x2={x(v)} y2={v % 50 === 0 ? 46 : 41} stroke="var(--ink)" strokeWidth="1" />
+          <text x={x(v)} y="62" textAnchor="middle" className="scale-num">
+            {v}
+          </text>
+        </g>
+      ))}
+      <path d={`M${x(percent) - 8} 22 L${x(percent) + 8} 22 L${x(percent)} 33 Z`} fill="var(--redline)" />
+    </svg>
+  );
+}
+
+function buildItemIds(reqs: Requirement[]) {
+  const ids: Record<string, string> = {};
+  categories.forEach((cat, ci) => {
+    reqs
+      .filter((r) => r.category === cat.id)
+      .forEach((r, i) => {
+        ids[r.id] = `${SECTION_LETTERS[ci]}.${i + 1}`;
+      });
+  });
+  return ids;
 }

@@ -14,6 +14,7 @@ pnpm install
 pnpm dev         # http://localhost:3000
 pnpm test        # unit tests for scoring and gate logic
 pnpm build       # static export to ./out, deploy anywhere (Vercel, Netlify, Cloudflare Pages)
+pnpm build:demo  # the whole site as one self-contained HTML file (hash routing) in ./dist-demo
 ```
 
 ## Where to change things
@@ -24,4 +25,5 @@ pnpm build       # static export to ./out, deploy anywhere (Vercel, Netlify, Clo
 | Assessment questions, guidance, CRA references | `src/lib/cra-requirements.ts` |
 | Scoring and prioritisation | `src/lib/assessment-score.ts` |
 | Release-gate triggers and rules | `src/lib/release-gate.ts` |
-| Landing page copy, pricing, FAQ | `src/app/page.tsx` |
+| Landing page copy, pricing, FAQ | `src/components/Home.tsx` |
+| Design tokens and components | `src/design/system.css` (see `DESIGN.md`) |

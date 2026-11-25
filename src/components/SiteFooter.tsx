@@ -1,29 +1,48 @@
-import Link from "next/link";
-import { Logo } from "@/components/Logo";
-import { site } from "@/lib/site";
+import { paths } from "@/lib/paths";
+import { regulation, revisions, site } from "@/lib/site";
 
 export function SiteFooter() {
+  const current = revisions[revisions.length - 1];
   return (
-    <footer className="no-print border-t border-line bg-paper">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm text-ink-soft sm:px-6 md:grid-cols-[2fr_1fr_1fr]">
-        <div className="space-y-3">
-          <Logo />
-          <p className="max-w-md">{site.tagline}.</p>
-          <p className="max-w-md text-xs text-muted">
-            {site.name} provides guidance and tooling, not legal advice. Confirm how the Cyber Resilience Act applies to
-            your products with qualified counsel.
-          </p>
-        </div>
-        <div className="space-y-2">
-          <p className="font-medium text-ink">Tools</p>
-          <Link href="/assessment/" className="block hover:text-ink">CRA readiness check</Link>
-          <Link href="/release-gate/" className="block hover:text-ink">Release security gate</Link>
-        </div>
-        <div className="space-y-2">
-          <p className="font-medium text-ink">Company</p>
-          <Link href="/#pricing" className="block hover:text-ink">Pricing</Link>
-          <a href={`mailto:${site.contactEmail}`} className="block hover:text-ink">Contact</a>
-        </div>
+    <footer className="site-foot">
+      <div className="wrap">
+        <dl className="tblock foot-block">
+          <div className="foot-title">
+            <dt>Title</dt>
+            <dd>
+              {site.name}: {site.tagline}
+            </dd>
+          </div>
+          <div>
+            <dt>Instrument</dt>
+            <dd>{regulation}</dd>
+          </div>
+          <div>
+            <dt>Rev · date</dt>
+            <dd>
+              {current.rev} · {current.date}
+            </dd>
+          </div>
+          <div>
+            <dt>Tools</dt>
+            <dd>
+              <a href={paths.assessment}>Readiness check</a> · <a href={paths.releaseGate}>Release gate</a>
+            </dd>
+          </div>
+          <div>
+            <dt>Contact</dt>
+            <dd>
+              <a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a>
+            </dd>
+          </div>
+          <div className="foot-note">
+            <dt>Note</dt>
+            <dd>
+              {site.name} provides guidance and tooling, not legal advice. Confirm how the Cyber Resilience Act applies to
+              your products with qualified counsel.
+            </dd>
+          </div>
+        </dl>
       </div>
     </footer>
   );

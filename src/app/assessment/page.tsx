@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Assessment } from "@/components/Assessment";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
   title: "CRA readiness check",
@@ -7,5 +8,12 @@ export const metadata: Metadata = {
 };
 
 export default function AssessmentPage() {
-  return <Assessment />;
+  return (
+    <>
+      <SiteHeader current="assessment" />
+      <main>
+        <Assessment />
+      </main>
+    </>
+  );
 }

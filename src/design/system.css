@@ -1,0 +1,831 @@
+/*
+  CHECKPRINT: a design system drawn from the engineering-drawing set.
+  Our buyers make hardware and firmware; their native documents are drawings,
+  inspection reports and the checker's redlines. Every device below is borrowed
+  from that world and carries meaning, not decoration.
+
+  Layout: sheets on a drafting board. Each section is a drawing sheet on a
+  non-photo-blue grid; labels are feature-control frames; the bold layer is the
+  checker's markup (yellow highlighter = verified, red pen = redline).
+  Type is legibility-engineered (cockpit display face, Braille Institute text and mono faces).
+  Scales follow the ISO 216 paper ratio: every step is x√2 (or x⁴√2 for type).
+*/
+
+:root {
+  /* Plotted sheet (light) */
+  --ground: #e4e8e6;
+  --grid: #a9d6e2;
+  --paper: #fbfbf8;
+  --ink: #13191c;
+  --ink-2: #444e53;
+  --ink-3: #5f6a6f;
+  --rule: #c3cac9;
+  --redline: #c21f16;
+  --redline-wash: #fbe9e6;
+  --highlight: #f6e34a;
+  --highlight-ink: #13191c;
+  --nonphoto: #17708a;
+  --on-ink: #fbfbf8;
+  color-scheme: light;
+
+  /* B612 (cockpit display face) for headings only: its parentheses read as brackets, which breaks legal citations. */
+  --font-display: "B612", "Segoe UI", "DejaVu Sans", system-ui, sans-serif;
+  --font-text: "Atkinson Hyperlegible Next", "Segoe UI", "DejaVu Sans", system-ui, sans-serif;
+  --font-code: "Atkinson Hyperlegible Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+
+  /* ⁴√2 type scale */
+  --t-1: 0.707rem;
+  --t-2: 0.841rem;
+  --t-3: 1rem;
+  --t-4: 1.189rem;
+  --t-5: 1.414rem;
+  --t-6: 2rem;
+  --t-7: 2.828rem;
+  --t-8: 4rem;
+
+  /* √2 space scale */
+  --s-1: 0.25rem;
+  --s-2: 0.354rem;
+  --s-3: 0.5rem;
+  --s-4: 0.707rem;
+  --s-5: 1rem;
+  --s-6: 1.414rem;
+  --s-7: 2rem;
+  --s-8: 2.828rem;
+  --s-9: 4rem;
+
+  /* Line weights: ISO 128 thin / wide pair */
+  --lw-thin: 1px;
+  --lw-wide: 2px;
+
+  --measure: 66ch;
+  --sheet-max: 75rem;
+  --grid-step: 1.414rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* CAD model space (dark) */
+    --ground: #0a0d0f;
+    --grid: #15303a;
+    --paper: #11171a;
+    --ink: #e8ede9;
+    --ink-2: #b3bec0;
+    --ink-3: #93a0a4;
+    --rule: #2e3a3f;
+    --redline: #ff6a5c;
+    --redline-wash: #3a1714;
+    --highlight: #ead94b;
+    --highlight-ink: #13191c;
+    --nonphoto: #5cc3dc;
+    --on-ink: #11171a;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground: #0a0d0f;
+  --grid: #15303a;
+  --paper: #11171a;
+  --ink: #e8ede9;
+  --ink-2: #b3bec0;
+  --ink-3: #93a0a4;
+  --rule: #2e3a3f;
+  --redline: #ff6a5c;
+  --redline-wash: #3a1714;
+  --highlight: #ead94b;
+  --highlight-ink: #13191c;
+  --nonphoto: #5cc3dc;
+  --on-ink: #11171a;
+  color-scheme: dark;
+}
+
+/* ---------- Base ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--ground);
+  background-image:
+    linear-gradient(var(--grid) var(--lw-thin), transparent var(--lw-thin)),
+    linear-gradient(90deg, var(--grid) var(--lw-thin), transparent var(--lw-thin));
+  background-size: var(--grid-step) var(--grid-step);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: var(--t-3);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 30;
+  background: var(--paper);
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ol,
+ul,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+ol,
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+h1,
+h2 {
+  font-family: var(--font-display);
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.12;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: var(--lw-thin);
+  text-underline-offset: 0.2em;
+}
+
+input,
+button,
+summary {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: var(--lw-wide) solid var(--nonphoto);
+  outline-offset: 3px;
+}
+
+.code {
+  font-family: var(--font-code);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.lead {
+  font-size: var(--t-4);
+  color: var(--ink-2);
+  max-width: var(--measure);
+}
+
+.muted {
+  color: var(--ink-3);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Page frame ---------- */
+
+.wrap {
+  width: 100%;
+  max-width: calc(var(--sheet-max) + 2 * var(--s-7));
+  margin-inline: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+@media (min-width: 48rem) {
+  .wrap {
+    padding-left: max(var(--s-7), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--s-7), env(safe-area-inset-right, 0px));
+  }
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-7);
+  padding-block: var(--s-7) var(--s-9);
+}
+
+/* ---------- Sheet: a drawing sheet with a frame and zone ticks ---------- */
+
+.sheet {
+  position: relative;
+  background: var(--paper);
+  border: var(--lw-wide) solid var(--ink);
+  padding: var(--s-7) var(--s-5) var(--s-7);
+  /* zone ticks along the top and bottom edges */
+  background-image:
+    repeating-linear-gradient(90deg, var(--ink) 0 var(--lw-thin), transparent var(--lw-thin) 12.5%),
+    repeating-linear-gradient(90deg, var(--ink) 0 var(--lw-thin), transparent var(--lw-thin) 12.5%);
+  background-size: 100% 6px, 100% 6px;
+  background-position: 0 0, 0 100%;
+  background-repeat: no-repeat;
+  min-width: 0;
+}
+
+@media (min-width: 48rem) {
+  .sheet {
+    padding: var(--s-8) var(--s-8) var(--s-8);
+  }
+}
+
+.sheet-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-5);
+  margin-bottom: var(--s-7);
+}
+
+.sheet-head h2 {
+  font-size: clamp(var(--t-5), 4vw, var(--t-7));
+  max-width: 22ch;
+}
+
+.sheet-head > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+/* ---------- Feature-control frame: compartmented label ---------- */
+
+.fcf {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: var(--lw-thin) 0 0 var(--lw-thin);
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--paper);
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* every compartment draws its own box so wrapped rows stay closed */
+.fcf > span {
+  padding: var(--s-2) var(--s-3);
+  border: var(--lw-thin) solid var(--ink);
+  margin: calc(-1 * var(--lw-thin)) 0 0 calc(-1 * var(--lw-thin));
+}
+
+.fcf > .fcf-key {
+  background: var(--ink);
+  color: var(--on-ink);
+  font-weight: 700;
+}
+
+.fcf.is-redline {
+  color: var(--redline);
+}
+
+.fcf.is-redline > span {
+  border-color: var(--redline);
+}
+
+.fcf.is-redline > .fcf-key {
+  background: var(--redline);
+  color: var(--paper);
+}
+
+/* ---------- Balloon: item number callout ---------- */
+
+.balloon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2.4em;
+  height: 2.4em;
+  border: var(--lw-thin) solid var(--ink);
+  border-radius: 50%;
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  font-variant-numeric: tabular-nums;
+  background: var(--paper);
+  line-height: 1;
+}
+
+/* ---------- Buttons: plain frames; focus draws CAD grips ---------- */
+
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  min-height: 2.75rem;
+  padding: var(--s-3) var(--s-6);
+  border: var(--lw-wide) solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.btn-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-2);
+  padding-inline: var(--s-4);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn-danger {
+  border-color: var(--redline);
+  color: var(--redline);
+}
+
+/* CAD grips: square handles at the corners when an object is selected */
+.btn::before,
+.btn::after,
+.grip::before,
+.grip::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: var(--nonphoto);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn::before,
+.grip::before {
+  top: -5px;
+  left: -5px;
+}
+
+.btn::after,
+.grip::after {
+  bottom: -5px;
+  right: -5px;
+}
+
+.btn:hover::before,
+.btn:hover::after,
+.btn:focus-visible::before,
+.btn:focus-visible::after {
+  opacity: 1;
+}
+
+.btn:focus-visible {
+  outline: var(--lw-thin) dashed var(--nonphoto);
+  outline-offset: 4px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+/* ---------- Segmented selector (a frame whose compartments are choices) ---------- */
+
+.seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: var(--lw-thin) solid var(--ink);
+  max-width: 100%;
+}
+
+.seg button {
+  min-height: 2.75rem;
+  min-width: 3.5rem;
+  padding: var(--s-2) var(--s-4);
+  border: 0;
+  border-right: var(--lw-thin) solid var(--ink);
+  background: var(--paper);
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.seg button:last-child {
+  border-right: 0;
+}
+
+.seg button:hover {
+  background: color-mix(in srgb, var(--nonphoto) 14%, var(--paper));
+}
+
+.seg button[aria-checked="true"] {
+  background: var(--ink);
+  color: var(--on-ink);
+  font-weight: 700;
+  box-shadow: inset 0 -4px 0 var(--ink);
+}
+
+/* Selection must not rely on the highlighter alone (it is ~1.3:1 on paper): add a check glyph and an ink rule. */
+.seg button[aria-checked="true"]::before {
+  content: "✓ ";
+}
+
+.seg button[aria-checked="true"][data-status="done"] {
+  background: var(--highlight);
+  color: var(--highlight-ink);
+}
+
+.seg button[aria-checked="true"][data-status="partial"] {
+  background: repeating-linear-gradient(-45deg, var(--highlight) 0 6px, var(--paper) 6px 10px);
+  color: var(--highlight-ink);
+}
+
+.seg button[aria-checked="true"][data-status="missing"] {
+  background: var(--redline);
+  color: var(--paper);
+}
+
+.seg button[aria-checked="true"][data-status="na"] {
+  background: var(--ink-3);
+  color: var(--paper);
+}
+
+/* ---------- Checker's markup ---------- */
+
+.mark {
+  position: relative;
+  display: inline;
+  padding-inline: 0.15em;
+  margin-inline: -0.15em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.mark-done {
+  background: linear-gradient(transparent 12%, var(--highlight) 12% 88%, transparent 88%);
+  color: var(--highlight-ink);
+}
+
+.mark-partial {
+  background: repeating-linear-gradient(-45deg, var(--highlight) 0 5px, transparent 5px 9px);
+  color: var(--ink);
+}
+
+.mark-na {
+  text-decoration: line-through;
+  text-decoration-thickness: var(--lw-wide);
+  color: var(--ink-3);
+}
+
+/* red-pen ellipse drawn around a redlined title */
+.redpen {
+  position: absolute;
+  inset: -0.55em -0.9em -0.5em -0.7em;
+  width: calc(100% + 1.6em);
+  height: calc(100% + 1.05em);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.redpen path {
+  fill: none;
+  stroke: var(--redline);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: pen 420ms ease-out both;
+}
+
+@keyframes pen {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+/* revision cloud: SVG drawn around a changed item */
+.revcloud {
+  position: relative;
+}
+
+.revcloud > svg.cloud {
+  position: absolute;
+  inset: -7px;
+  width: calc(100% + 14px);
+  height: calc(100% + 14px);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.revcloud > svg.cloud path {
+  fill: none;
+  stroke: var(--redline);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.revtri {
+  display: inline-grid;
+  place-items: end center;
+  width: 2.1em;
+  height: 1.85em;
+  padding-bottom: 0.1em;
+  background: var(--redline);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  color: var(--paper);
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  font-weight: 700;
+  line-height: 1;
+  flex: none;
+}
+
+/* ---------- Hatching (ISO 128 section lines) for measured quantities ---------- */
+
+.gauge {
+  position: relative;
+  height: 0.9rem;
+  border: var(--lw-thin) solid var(--ink);
+  background: var(--paper);
+}
+
+.gauge > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: repeating-linear-gradient(45deg, var(--ink) 0 1px, transparent 1px 5px);
+  border-right: var(--lw-wide) solid var(--ink);
+}
+
+/* ---------- Fields ---------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.field input {
+  min-height: 2.75rem;
+  padding: var(--s-3) var(--s-4);
+  border: 0;
+  border-bottom: var(--lw-wide) solid var(--ink);
+  background: color-mix(in srgb, var(--nonphoto) 7%, var(--paper));
+  font-family: var(--font-code);
+  font-size: var(--t-3);
+}
+
+.field input::placeholder {
+  color: var(--ink-3);
+}
+
+/* ---------- Site header (title strip) ---------- */
+
+.masthead {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  background: var(--paper);
+  border-bottom: var(--lw-wide) solid var(--ink);
+}
+
+.masthead .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-5);
+  min-height: 3.75rem;
+}
+
+.masthead nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-6);
+}
+
+.masthead nav a {
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink-2);
+  padding-block: var(--s-3);
+}
+
+.masthead nav a:hover,
+.masthead nav a[aria-current="page"] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: var(--lw-wide);
+}
+
+.masthead-nav-wide {
+  display: none !important;
+}
+
+@media (min-width: 56rem) {
+  .masthead-nav-wide {
+    display: flex !important;
+  }
+}
+
+.masthead-nav-narrow {
+  border-top: var(--lw-thin) solid var(--rule);
+  overflow-x: auto;
+}
+
+.masthead-nav-narrow nav {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+@media (min-width: 56rem) {
+  .masthead-nav-narrow {
+    display: none;
+  }
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: stretch;
+  border: var(--lw-wide) solid var(--ink);
+  text-decoration: none;
+  font-family: var(--font-code);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+
+.wordmark > span {
+  display: grid;
+  place-items: center;
+  padding: var(--s-2) var(--s-3);
+}
+
+.wordmark > span:first-child {
+  border-right: var(--lw-wide) solid var(--ink);
+  padding-inline: var(--s-2);
+}
+
+/* ---------- Tables drawn as title blocks / BOMs ---------- */
+
+.tblock {
+  display: grid;
+  border: var(--lw-wide) solid var(--ink);
+  background: var(--paper);
+}
+
+.tblock > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-3) var(--s-4);
+  border-bottom: var(--lw-thin) solid var(--ink);
+  min-width: 0;
+}
+
+.tblock dt {
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.tblock dd {
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  overflow-wrap: anywhere;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  border: var(--lw-wide) solid var(--ink);
+}
+
+table.drawing {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-2);
+}
+
+table.drawing th,
+table.drawing td {
+  border: var(--lw-thin) solid var(--ink);
+  padding: var(--s-3) var(--s-4);
+  text-align: left;
+  vertical-align: top;
+}
+
+table.drawing thead th {
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--on-ink);
+  border-color: var(--ink);
+}
+
+table.drawing tr > :first-child {
+  border-left: 0;
+}
+
+table.drawing tr > :last-child {
+  border-right: 0;
+}
+
+table.drawing thead tr:first-child > * {
+  border-top: 0;
+}
+
+table.drawing tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+/* ---------- Motion ---------- */
+
+.plot {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: pen 900ms cubic-bezier(0.3, 0.6, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+  }
+  .no-print,
+  .masthead,
+  .site-foot {
+    display: none !important;
+  }
+  .sheet {
+    border-width: 1px;
+  }
+}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ReleaseGate } from "@/components/ReleaseGate";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
   title: "Release security gate",
@@ -7,5 +8,12 @@ export const metadata: Metadata = {
 };
 
 export default function ReleaseGatePage() {
-  return <ReleaseGate />;
+  return (
+    <>
+      <SiteHeader current="release-gate" />
+      <main>
+        <ReleaseGate />
+      </main>
+    </>
+  );
 }
