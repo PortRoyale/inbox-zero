@@ -5,7 +5,7 @@ import { industries } from "@/content/industries";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BriefView } from "@/components/seo/BriefView";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { LinkGrid } from "@/components/seo/LinkGrid";
+import { SectorTable } from "@/components/seo/Indexes";
 import { buildBrief } from "@/lib/seo/brief";
 import { breadcrumbs, faqPage } from "@/lib/seo/jsonld";
 
@@ -44,7 +44,7 @@ export default async function CountryPage({ params }: { params: Promise<Params> 
               {
                 id: "sectors",
                 label: "Your sector",
-                content: <LinkGrid title={`By sector in ${country.name}`} links={industries.map((i) => ({ href: `/cra/${i.slug}/${country.slug}/`, label: i.name }))} />,
+                content: <SectorTable title={`By sector in ${country.name}`} industries={industries} hrefFor={(i) => `/cra/${i.slug}/${country.slug}/`} />,
               },
             ]}
           />

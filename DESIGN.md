@@ -38,6 +38,27 @@ Our buyers make hardware, firmware and software products. Their native documents
 - B612 draws `(` like `[`, so it never sets citations or body text.
 - Non-photo blue is invisible by design (2.95:1). The token is darkened to 5.4:1 for text and focus rings.
 - The highlighter is only 1.3:1 against paper, so state never relies on it alone: selected answers also get a ✓ and an ink rule.
-- Status always has a text label. Yellow means *verified*, which is a drafting convention most users won't know.
+- Status always has a text label.
 - B612 only sets page titles; any parentheses in a title are set in the text face.
 - All motion stops under `prefers-reduced-motion`.
+
+**Structure, not chip clouds**
+
+- Any group of related items sits in a frame with a header and aligned columns: `SpecTable` (a register that stacks into labelled rows on phones), `OptionGrid` (equal checkbox cells, grouped under a label column), `CheckList` (statement rows with their legal basis) or `RefTable` (reference documents). Never a free-wrapping row of chips or pills.
+- Every framed box in a column spans the column: same left and right edge as its siblings. Only lines of text get a reading measure.
+- Cells that sit side by side share rows (CSS subgrid): labels on one line, controls on one line, notes on one line. Every control in a row has the same height.
+- Badges come in families (priority, risk level, outcome, CRA class, scope, answers, step counters). Every badge in a family is the same width and height, whatever its label.
+
+**One colour language**
+
+- Green means complete or yes. Yellow means partly. Red means a gap, a block or open issues. Grey means not applicable. Blue is for links and primary actions.
+- Links are always blue (light blue on dark panels) and underlined; in tables they are bold, so titles stand out from data.
+- Progress bars fill with a red, yellow, green gradient laid across the whole track, so the colour a bar reaches shows how far along it is.
+- Each answer carries its colour at rest (band and key cap) and fills with it when selected.
+
+**Questionnaires are walkthroughs**
+
+- Every questionnaire (readiness check, release gate, plan requirements) runs on `Walkthrough`: one question at a time, sections as levels, a segmented progress rail, key caps (1 to 4 or Y, P, N, A), feedback, auto-advance, a level-complete stamp, a review table and resume.
+- The question itself is the largest text on the screen; the requirement name is a small label above it.
+
+**Enforced by audits** (`node scripts/audit/edges.cjs <url>` and `node scripts/audit/badges.cjs <url>`): every framed box shares its column edges, rows in strips and card rows line up, and every badge family is uniform, at desktop and phone widths.

@@ -1,6 +1,7 @@
 import { ExplodedView } from "@/components/ExplodedView";
 import { PageHero } from "@/components/PageHero";
 import { Balloon, Fcf } from "@/components/primitives";
+import { RefTable, SpecTable, type Reference } from "@/components/structure";
 import { Timeline } from "@/components/Timeline";
 import { requirements } from "@/lib/cra-requirements";
 import { paths } from "@/lib/paths";
@@ -20,12 +21,6 @@ const tools = [
   { name: "Sector & country briefs", body: "Your product class, deadlines and where to report, for 14 sectors and 39 countries.", href: paths.brief, cta: "Get my brief", tool: "briefs" },
 ];
 
-const appliesTo = [
-  { title: "Connected devices", body: "Anything with a radio or a port: smart home, wearables, controllers, point-of-sale." },
-  { title: "Firmware", body: "Code you ship on your own or a partner's hardware." },
-  { title: "Software", body: "Installable and mobile software sold in the EU, plus the backend it needs." },
-];
-
 const stats = [
   { figure: "€15M", label: "maximum fine, or 2.5% of worldwide turnover", color: "var(--brand-red)" },
   { figure: "24 h", label: "to send an early warning for an exploited vulnerability", color: "var(--brand-yellow)" },
@@ -33,17 +28,25 @@ const stats = [
   { figure: "50%", label: "EU co-funding for eligible SMEs, up to €30,000", color: "var(--brand-green)" },
 ];
 
-const standards = [
-  { name: "Regulation (EU) 2024/2847", color: "var(--brand-blue)" },
-  { name: "ENISA Single Reporting Platform", color: "var(--brand-red)" },
-  { name: "EN 18031", color: "var(--brand-yellow)" },
-  { name: "ETSI EN 303 645", color: "var(--brand-green)" },
-  { name: "IEC 62443-4-1", color: "var(--brand-blue)" },
-  { name: "EN 40000-1-2", color: "var(--brand-red)" },
-  { name: "UK PSTI", color: "var(--brand-yellow)" },
+const references: Reference[] = [
+  { ref: "R1", doc: "Regulation (EU) 2024/2847", kind: "EU law", use: "The Cyber Resilience Act: essential requirements, reporting and CE marking." },
+  { ref: "R2", doc: "ENISA Single Reporting Platform", kind: "Reporting", use: "Where 24-hour warnings, 72-hour notifications and final reports go." },
+  { ref: "R3", doc: "EN 18031-1/-2/-3", kind: "Harmonised std", use: "Radio equipment cybersecurity under the RED delegated act." },
+  { ref: "R4", doc: "ETSI EN 303 645", kind: "Standard", use: "Consumer IoT security baseline; a practical starting point." },
+  { ref: "R5", doc: "IEC 62443-4-1", kind: "Standard", use: "Secure development lifecycle for industrial products." },
+  { ref: "R6", doc: "EN 40000-1-2", kind: "CRA standard", use: "First horizontal CRA standards; not yet cited in the Official Journal." },
+  { ref: "R7", doc: "UK PSTI Act 2022", kind: "UK law", use: "Default passwords, vulnerability reporting and update periods for UK sales." },
 ];
 
-const outOfScope = ["Medical devices", "Vehicles, aviation, marine", "Pure SaaS (NIS2 instead)", "Non-commercial open source"];
+const scope = [
+  { type: "Connected devices", examples: "Smart home, wearables, controllers, point-of-sale", status: "in", applies: "Cyber Resilience Act" },
+  { type: "Firmware", examples: "Code you ship on your own or a partner's hardware", status: "in", applies: "Cyber Resilience Act" },
+  { type: "Software", examples: "Installable and mobile software, plus the backend it needs", status: "in", applies: "Cyber Resilience Act" },
+  { type: "Medical devices", examples: "Devices under the MDR and IVDR", status: "out", applies: "MDR / IVDR" },
+  { type: "Vehicles, aviation, marine", examples: "Type-approved vehicles, aircraft and ships", status: "out", applies: "Sector type-approval rules" },
+  { type: "Pure SaaS", examples: "Hosted services with no product shipped", status: "out", applies: "NIS2, where in scope" },
+  { type: "Non-commercial open source", examples: "Projects not supplied in the course of business", status: "out", applies: "Light duties for stewards only" },
+] as const;
 
 export function Home() {
   return (
@@ -130,32 +133,24 @@ export function Home() {
           <Fcf keyCell="Sheet 3/3" cells={["Scope · Art. 2"]} />
           <h2 id="scope-title">Built for small teams that make real products</h2>
         </div>
-        <div className="scope-strip">
-          {appliesTo.map((a) => (
-            <div key={a.title}>
-              <h3>{a.title}</h3>
-              <p>{a.body}</p>
-            </div>
-          ))}
-          <div className="applies-out">
-            <p className="label">Excluded</p>
-            <ul>
-              {outOfScope.map((o) => (
-                <li key={o} className="mark-na">
-                  {o}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div className="standards-strip" aria-label="Standards the tools map to">
-          <span className="label">Maps to</span>
-          {standards.map((st) => (
-            <span key={st.name} className="std-chip" style={{ ["--chip" as string]: st.color }}>
-              {st.name}
-            </span>
-          ))}
-        </div>
+        <SpecTable
+          className="scope-table"
+          rows={[...scope]}
+          rowKey={(r) => r.type}
+          rowClass={(r) => (r.status === "out" ? "is-out" : undefined)}
+          cols={[
+            { key: "type", label: "Product type", head: true, width: "28%", render: (r) => r.type },
+            { key: "examples", label: "Examples", render: (r) => r.examples },
+            {
+              key: "status",
+              label: "CRA scope",
+              width: "9rem",
+              render: (r) => <span className={`scope-tag is-${r.status}`}>{r.status === "in" ? "In scope" : "Excluded"}</span>,
+            },
+            { key: "applies", label: "Rules that apply", width: "24%", render: (r) => r.applies },
+          ]}
+        />
+        <RefTable caption="Maps to · reference documents" refs={references} />
         <div className="cta-band">
           <p>
             <strong>Designed by a practising Chief Security Officer.</strong> Plans from €0, with EU co-funding for eligible SMEs.

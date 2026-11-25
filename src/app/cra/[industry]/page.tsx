@@ -6,7 +6,7 @@ import { industries, industryBySlug } from "@/content/industries";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BriefView } from "@/components/seo/BriefView";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { LinkGrid } from "@/components/seo/LinkGrid";
+import { CountryIndex, GuideRegister } from "@/components/seo/Indexes";
 import { buildBrief } from "@/lib/seo/brief";
 import { breadcrumbs, faqPage } from "@/lib/seo/jsonld";
 
@@ -43,9 +43,9 @@ export default async function IndustryPage({ params }: { params: Promise<Params>
               {
                 id: "countries",
                 label: "Your country",
-                content: <LinkGrid title={`${industry.name}: pick your country`} links={countries.map((c) => ({ href: `/cra/${industry.slug}/${c.slug}/`, label: c.name, meta: c.inEU ? "EU" : "Exporter" }))} />,
+                content: <CountryIndex title={`${industry.name}: pick your country`} countries={countries} hrefFor={(c) => `/cra/${industry.slug}/${c.slug}/`} />,
               },
-              { id: "guides", label: "Guides", content: <LinkGrid title="Guides" links={guides.map((g) => ({ href: `/guides/${g.slug}/`, label: g.title }))} /> },
+              { id: "guides", label: "Guides", content: <GuideRegister title="Guides" guides={guides} /> },
             ]}
           />
         </div>

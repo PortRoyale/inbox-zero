@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { countries } from "@/content/countries";
 import { guides } from "@/content/guides";
-import { craClassInfo, industries } from "@/content/industries";
+import { industries } from "@/content/industries";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SheetTabs } from "@/components/SheetTabs";
 import { BriefExplorer } from "@/components/seo/BriefExplorer";
-import { LinkGrid } from "@/components/seo/LinkGrid";
+import { CountryIndex, GuideRegister, SectorTable } from "@/components/seo/Indexes";
 
 export const metadata: Metadata = {
   title: "CRA compliance by sector and country",
@@ -26,14 +26,14 @@ export default function CraHub() {
               {
                 id: "sectors",
                 label: "All sectors",
-                content: <LinkGrid title="By sector" links={industries.map((i) => ({ href: `/cra/${i.slug}/`, label: i.name, meta: craClassInfo[i.craClass].label.replace("Important product, ", "") }))} />,
+                content: <SectorTable title="By sector" industries={industries} hrefFor={(i) => `/cra/${i.slug}/`} />,
               },
               {
                 id: "countries",
                 label: "All countries",
-                content: <LinkGrid title="By country" links={countries.map((c) => ({ href: `/cra/countries/${c.slug}/`, label: c.name, meta: c.inEU ? "EU" : "Exporter" }))} />,
+                content: <CountryIndex title="By country" countries={countries} hrefFor={(c) => `/cra/countries/${c.slug}/`} />,
               },
-              { id: "guides", label: "All guides", content: <LinkGrid title="Guides" links={guides.map((g) => ({ href: `/guides/${g.slug}/`, label: g.title }))} /> },
+              { id: "guides", label: "All guides", content: <GuideRegister title="Guides" guides={guides} /> },
             ]}
           />
         </div>

@@ -3,6 +3,7 @@ import { PageHero } from "@/components/PageHero";
 import { SheetTabs } from "@/components/SheetTabs";
 import { Crumbs } from "@/components/seo/Crumbs";
 import { StartPlanButton } from "@/components/seo/StartPlanButton";
+import { GuideRegister, SourceTable } from "@/components/seo/Indexes";
 import { paths } from "@/lib/paths";
 
 export function GuideView({ guide, related, crumbs }: { guide: Guide; related: Guide[]; crumbs: { name: string; path: string }[] }) {
@@ -57,30 +58,8 @@ export function GuideView({ guide, related, crumbs }: { guide: Guide; related: G
             label: "Sources and related",
             content: (
               <div className="stack-sm">
-                <div className="sources">
-                  <h2 className="guide-h2">Sources</h2>
-                  <ul>
-                    {guide.sources.map((s) => (
-                      <li key={s.url}>
-                        <a href={s.url} target="_blank" rel="noreferrer">
-                          {s.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                {related.length > 0 && (
-                  <div>
-                    <h2 className="guide-h2">Related guides</h2>
-                    <ul className="bullets">
-                      {related.map((r) => (
-                        <li key={r.slug}>
-                          <a href={`/guides/${r.slug}/`}>{r.title}</a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <SourceTable sources={guide.sources} />
+                {related.length > 0 && <GuideRegister title="Related guides" guides={related} />}
               </div>
             ),
           },

@@ -433,8 +433,10 @@
 }
 
 @container (max-width: 34rem) {
-  .checklist.has-basis {
-    --check-cols: 3rem minmax(0, 1fr);
+  /* Container queries style descendants only, so set the columns on the rows themselves. */
+  .checklist.has-basis .check-row,
+  .checklist.has-basis .checklist-head {
+    grid-template-columns: 3rem minmax(0, 1fr);
   }
   .checklist-head > span:nth-child(3) {
     display: none;
@@ -570,13 +572,32 @@
   text-align: center;
 }
 
+/* One colour language site-wide: green = complete (as "Yes"), yellow = partly, red = open issues. */
 .step-btn.is-done .step-state,
 .run-map-btn.is-clear .run-map-meta {
   padding: 0;
-  background: var(--highlight);
-  border-color: var(--highlight);
-  color: var(--highlight-ink);
+  background: var(--brand-green);
+  border-color: var(--brand-green);
+  color: var(--on-brand);
   font-weight: 700;
+}
+
+.step-btn.is-open .step-state,
+.step-btn.is-blocked .step-state {
+  border-color: var(--redline);
+  color: var(--redline);
+  font-weight: 700;
+}
+
+.step-btn.is-blocked .step-state {
+  background: var(--redline);
+  color: var(--paper);
+}
+
+.run-map-btn.is-clear .run-map-no {
+  background: var(--brand-green);
+  border-color: var(--brand-green);
+  color: var(--on-brand);
 }
 
 /* Fix register (readiness report): "How to fix" sits on its own line under the requirement. */
@@ -671,4 +692,645 @@
   background: var(--paper);
   color: var(--ink);
   border-color: var(--ink);
+}
+
+/* ---------- Site-wide structure (home, briefs, guides, footer) ---------- */
+
+/* Tool cards: heading, text and button rows line up across every card (subgrid), and every
+   button spans its card so all four share edges. */
+.tool-cards li {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: var(--s-4);
+}
+
+.tool-cards li .btn {
+  align-self: end;
+  justify-self: stretch;
+  text-align: center;
+}
+
+/* Two-line cells: a bold title over its body text. */
+.cell-title {
+  display: block;
+  font-weight: 700;
+}
+
+.cell-body {
+  display: block;
+  margin-top: var(--s-1);
+  font-weight: 400;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+.brief-plan .when {
+  font-weight: 700;
+  color: var(--brand-blue);
+}
+
+.brief-plan .when.is-now {
+  color: var(--redline);
+}
+
+.spec tbody tr.is-now > * {
+  background: color-mix(in srgb, var(--redline) 6%, var(--paper));
+}
+
+/* CRA class and scope: badge families with one size each. */
+.class-tag,
+.scope-tag {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  width: 11.5ch;
+  height: 1.75rem;
+  border: var(--lw-thin) solid var(--ink-3);
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+
+.class-tag.is-important-1 {
+  background: var(--highlight);
+  border-color: var(--highlight);
+  color: var(--highlight-ink);
+}
+
+.class-tag.is-important-2 {
+  border-color: var(--redline);
+  color: var(--redline);
+  box-shadow: inset 0 0 0 1px var(--redline);
+}
+
+.class-tag.is-critical {
+  background: var(--redline);
+  border-color: var(--redline);
+  color: var(--paper);
+}
+
+.scope-tag.is-in {
+  background: var(--brand-green);
+  border-color: var(--brand-green);
+  color: var(--on-brand);
+}
+
+.scope-tag.is-out {
+  border-style: dashed;
+}
+
+.scope-table tbody tr.is-out th,
+.scope-table tbody tr.is-out td:not(:has(.scope-tag)) {
+  color: var(--ink-2);
+}
+
+/* Country index: a label column per group, equal cells for the countries. */
+.link-index {
+  border: var(--lw-wide) solid var(--ink);
+  container-type: inline-size;
+}
+
+.link-index-group {
+  display: grid;
+  grid-template-columns: 12rem minmax(0, 1fr);
+}
+
+.link-index-group + .link-index-group {
+  border-top: var(--lw-wide) solid var(--ink);
+}
+
+.link-index-label {
+  display: grid;
+  align-content: start;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border-right: var(--lw-thin) solid var(--ink);
+  background: var(--tool-soft, var(--brand-blue-soft));
+  box-shadow: inset 4px 0 0 var(--tool, var(--brand-blue));
+}
+
+.link-index-label p {
+  margin: 0;
+}
+
+.link-index-label .code {
+  font-size: var(--t-1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.link-index-count {
+  font-size: var(--t-6) !important;
+  line-height: 1;
+}
+
+.link-index-note {
+  font-size: var(--t-1);
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+
+.link-index-cells {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.link-index-cells a {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 2.75rem;
+  padding: var(--s-3) var(--s-4);
+  text-decoration: none;
+  box-shadow:
+    var(--lw-thin) 0 0 var(--rule),
+    0 var(--lw-thin) 0 var(--rule);
+}
+
+.link-index-cells a:hover {
+  background: color-mix(in srgb, var(--tool, var(--brand-blue)) 10%, var(--paper));
+}
+
+.link-index-code {
+  font-size: var(--t-1);
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+}
+
+@container (max-width: 52rem) {
+  .link-index-cells {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 40rem) {
+  .link-index-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .link-index-label {
+    border-right: 0;
+    border-bottom: var(--lw-thin) solid var(--ink);
+    grid-template-columns: auto auto 1fr;
+    align-items: baseline;
+    gap: var(--s-4);
+  }
+  .link-index-count {
+    font-size: var(--t-4) !important;
+  }
+  .link-index-cells {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Brief and guide side panel: readable in both themes. */
+.brief-cta {
+  color: var(--hero-ink);
+}
+
+.brief-cta p,
+.brief-cta .label,
+.brief-cta .cta-title {
+  color: var(--hero-ink);
+  opacity: 1;
+}
+
+.brief-cta a:not(.btn) {
+  color: var(--hero-muted);
+}
+
+/* Footer tools: a two-column list, not a wrapping run of links. */
+.foot-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2) var(--s-5);
+}
+
+.foot-links a {
+  display: inline-block;
+  padding-block: 2px;
+}
+
+/* Cost calculator: the breakdown spans the full width under inputs and summary. */
+.calc > .calc-table,
+.calc > .hint {
+  grid-column: 1 / -1;
+}
+
+.calc > .hint {
+  margin: 0;
+}
+
+/* Plan builder control strip: one frame, three cells, two shared rows (labels, controls).
+   Every control is the same height and sits on the same line. */
+.control-strip {
+  --ctl-h: 2.75rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(13rem, auto) minmax(13rem, auto);
+  grid-template-rows: auto auto;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  border: var(--lw-thin) solid var(--ink);
+  background: var(--paper);
+}
+
+.cs-cell {
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  row-gap: var(--s-3);
+  padding: var(--s-4);
+  min-width: 0;
+}
+
+.cs-cell + .cs-cell {
+  border-left: var(--lw-thin) solid var(--ink);
+}
+
+.cs-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-4);
+  margin: 0;
+  min-width: 0;
+}
+
+.cs-note {
+  font-size: var(--t-2);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-control {
+  align-self: end;
+  height: var(--ctl-h);
+}
+
+.cs-control.seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: 100%;
+}
+
+.cs-control.seg button {
+  min-height: 0;
+  height: 100%;
+}
+
+.cs-start {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: var(--s-3);
+}
+
+.cs-start select,
+.cs-start .btn {
+  height: var(--ctl-h);
+  min-height: 0;
+}
+
+.cs-start select {
+  padding: 0 var(--s-3);
+  border: 0;
+  border-bottom: var(--lw-wide) solid var(--ink);
+  background: color-mix(in srgb, var(--nonphoto) 7%, var(--paper));
+  font-family: var(--font-text);
+  color: var(--ink);
+  min-width: 0;
+}
+
+.cs-plan-name {
+  margin: 0;
+  align-self: center;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-start .row {
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 48rem) {
+  .control-strip {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
+  }
+  .cs-wide {
+    grid-column: 1 / -1;
+    border-bottom: var(--lw-thin) solid var(--ink);
+  }
+  .cs-cell + .cs-cell {
+    border-left: 0;
+  }
+  .cs-cell:last-child {
+    border-left: var(--lw-thin) solid var(--ink);
+  }
+}
+
+/* Stacked tables in one column keep a consistent gap. */
+.spec + .spec,
+.spec + .cta-band,
+.scope-table + .spec {
+  margin-top: var(--s-6);
+}
+
+@media (max-width: 30rem) {
+  .control-strip {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  .control-strip .cs-cell {
+    grid-row: auto;
+    grid-template-rows: auto auto;
+  }
+  .control-strip .cs-cell {
+    border-left: 0 !important;
+  }
+  .control-strip .cs-cell + .cs-cell {
+    border-top: var(--lw-thin) solid var(--ink);
+  }
+  .cs-start {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Stacked tables on narrow widths: caption spans the block; the row's title comes first. */
+@container (max-width: 36rem) {
+  .spec caption {
+    display: block;
+    width: auto;
+  }
+  .spec tbody tr:not(.spec-group) {
+    display: flex;
+    flex-direction: column;
+  }
+  .spec tbody tr:not(.spec-group) > th[scope="row"] {
+    order: -1;
+    padding-bottom: var(--s-2);
+  }
+}
+
+/* Pricing plans on phones: four plan columns that always fit; each feature name spans its row. */
+@media (max-width: 40rem) {
+  .table-scroll:has(> .variants) {
+    overflow: visible;
+  }
+  table.variants,
+  table.variants thead,
+  table.variants tbody,
+  table.variants tfoot {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+  table.variants colgroup {
+    display: none;
+  }
+  table.variants tr {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  table.variants tr > * {
+    display: block;
+    min-width: 0;
+    padding: var(--s-3) var(--s-2);
+    text-align: center;
+  }
+  table.variants tbody tr > th[scope="row"] {
+    grid-column: 1 / -1;
+    text-align: left;
+    padding: var(--s-3) var(--s-4) var(--s-1);
+    border-bottom: 0;
+    background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  }
+  table.variants thead tr > th:first-child,
+  table.variants tfoot tr > th:first-child {
+    display: none;
+  }
+  table.variants .variant-name,
+  table.variants .variant-price,
+  table.variants .variant-code {
+    display: block;
+  }
+  table.variants tfoot .btn {
+    width: 100%;
+    padding-inline: var(--s-1);
+    white-space: normal;
+  }
+}
+
+/* ---------- Links: always blue, so titles in tables and text read as links ---------- */
+
+:root {
+  --link: var(--brand-blue);
+  --link-on-dark: #9cc0ff;
+}
+
+a:not(.btn) {
+  color: var(--link);
+  text-decoration-color: color-mix(in srgb, var(--link) 50%, transparent);
+}
+
+a:not(.btn):hover {
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 2px;
+}
+
+.spec a:not(.btn) {
+  font-weight: 700;
+}
+
+.masthead a:not(.btn) {
+  color: var(--ink-2);
+}
+
+.masthead a:not(.btn):hover,
+.masthead a:not(.btn)[aria-current="page"] {
+  color: var(--ink);
+}
+
+.site-foot a:not(.btn),
+.brief-cta a:not(.btn),
+.is-blueprint a:not(.btn) {
+  color: var(--link-on-dark);
+  text-decoration-color: color-mix(in srgb, var(--link-on-dark) 60%, transparent);
+}
+
+/* ---------- Progress bars: progressive colour, red to yellow to green ---------- */
+
+.gauge > span {
+  background: linear-gradient(90deg, var(--brand-red) 0%, var(--brand-yellow) 50%, var(--brand-green) 100%);
+  background-size: calc(100% * 100 / max(var(--pct, 100), 1)) 100%;
+  background-repeat: no-repeat;
+  border-right: var(--lw-wide) solid var(--ink);
+}
+
+.gauge.is-cost > span {
+  background: repeating-linear-gradient(45deg, var(--ink) 0 1px, transparent 1px 5px);
+}
+
+.gauge.is-cost.is-ours > span {
+  background: var(--brand-blue);
+}
+
+.masthead a.wordmark:not(.btn) {
+  color: var(--ink);
+}
+
+/* ---------- Cost calculator v2: inputs row, result strip, breakdown ---------- */
+
+@media (min-width: 56rem) {
+  .calc.calc-v2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.calc-v2 {
+  gap: var(--s-5);
+}
+
+/* Four inputs; label, control and hint rows line up across all of them. */
+.calc-inputs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: auto;
+  column-gap: var(--s-4);
+  row-gap: var(--s-2);
+}
+
+.calc-inputs > .field {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  gap: var(--s-2);
+  margin: 0;
+}
+
+.calc-inputs > .field input,
+.calc-inputs > .field select {
+  height: 2.75rem;
+  width: 100%;
+}
+
+.calc-inputs .label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Result strip: label, figure, bar and note rows aligned across the three cells. */
+.calc-result {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(4, auto);
+  border: var(--lw-wide) solid var(--ink);
+}
+
+.cr-cell {
+  display: grid;
+  grid-row: span 4;
+  grid-template-rows: subgrid;
+  row-gap: var(--s-3);
+  padding: var(--s-5);
+  min-width: 0;
+}
+
+.cr-cell + .cr-cell {
+  border-left: var(--lw-thin) solid var(--ink);
+}
+
+.cr-cell p {
+  margin: 0;
+}
+
+.cr-figure {
+  font-size: var(--t-6);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.cr-note {
+  grid-row: 4;
+  font-size: var(--t-2);
+  color: var(--ink-2);
+}
+
+.cr-cell.is-ours {
+  background: var(--brand-blue-soft);
+  box-shadow: inset 0 5px 0 var(--brand-blue);
+}
+
+.cr-cell.is-save {
+  background: color-mix(in srgb, var(--brand-green) 12%, var(--paper));
+  box-shadow: inset 0 5px 0 var(--brand-green);
+}
+
+.cr-cell.is-save .cr-figure {
+  color: var(--brand-green);
+}
+
+@media (max-width: 48rem) {
+  .calc-inputs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .calc-result {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  .cr-cell {
+    grid-row: auto;
+    grid-template-rows: auto;
+  }
+  .cr-note {
+    grid-row: auto;
+  }
+  .cr-cell + .cr-cell {
+    border-left: 0;
+    border-top: var(--lw-thin) solid var(--ink);
+  }
+}
+
+/* Control strip: the destructive "New plan" action looks like its sibling controls. */
+.cs-start .btn-quiet {
+  height: var(--ctl-h);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.cs-start .row {
+  gap: var(--s-3);
+}
+
+@media (max-width: 30rem) {
+  .control-strip .cs-control {
+    height: auto;
+  }
+  .control-strip .cs-control.seg {
+    height: var(--ctl-h);
+  }
+}
+
+/* Breakdown table: the two money columns fit their headers on one line. */
+.calc-table thead th {
+  white-space: nowrap;
 }

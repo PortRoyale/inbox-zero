@@ -154,42 +154,55 @@ export function PlanBuilder() {
         lead="Eight short steps produce the technical documentation the CRA asks for. Gaps are never hidden; they become actions with owners and dates."
         aside={<PlanStatus analysis={analysis} />}
       >
-        <div className="plan-toolbar">
-          {isExample ? (
-            <p className="toolbar-note">
-              <strong>Example plan</strong> for a fictional thermostat.
+        <div className="plan-toolbar control-strip">
+          <div className="cs-cell cs-wide">
+            <p className="cs-head">
+              <span className="label">Plan</span>
+              <span className="cs-note">
+                {isExample ? (
+                  <>
+                    <strong>Example</strong> for a fictional thermostat
+                  </>
+                ) : (
+                  (importedNote ?? "Yours, saved in this browser")
+                )}
+              </span>
             </p>
-          ) : importedNote ? (
-            <p className="toolbar-note">{importedNote}</p>
-          ) : null}
-          {isExample && (
-            <label className="toolbar-field" htmlFor="start-industry">
-              <span className="label">Start yours</span>
-              <select
-                id="start-industry"
-                value=""
-                onChange={(e) => {
-                  setPlan(withRisks(applyIndustry(emptyPlan(), e.target.value)));
-                  setIsExample(false);
-                  go(0);
-                }}
-              >
-                <option value="">Choose your sector…</option>
-                {industries.map((i) => (
-                  <option key={i.slug} value={i.slug}>
-                    {i.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {isExample && (
-            <button type="button" className="btn btn-quiet" onClick={startBlank}>
-              Start blank
-            </button>
-          )}
-          <div className="toolbar-segs">
-            <div className="seg" role="radiogroup" aria-label="View">
+            {isExample ? (
+              <div className="cs-control cs-start">
+                <select
+                  id="start-industry"
+                  aria-label="Start your own plan for a sector"
+                  value=""
+                  onChange={(e) => {
+                    setPlan(withRisks(applyIndustry(emptyPlan(), e.target.value)));
+                    setIsExample(false);
+                    go(0);
+                  }}
+                >
+                  <option value="">Start yours: choose your sector…</option>
+                  {industries.map((i) => (
+                    <option key={i.slug} value={i.slug}>
+                      {i.name}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" className="btn" onClick={startBlank}>
+                  Start blank
+                </button>
+              </div>
+            ) : (
+              <div className="cs-control cs-start">
+                <p className="cs-plan-name">{plan.product.name || "Untitled plan"}</p>
+                <ConfirmButton label="New plan" confirmLabel="Clear this plan" onConfirm={startBlank} />
+              </div>
+            )}
+          </div>
+          <div className="cs-cell">
+            <p className="cs-head">
+              <span className="label">View</span>
+            </p>
+            <div className="cs-control seg" role="radiogroup" aria-label="View">
               <button type="button" role="radio" aria-checked={view === "build"} onClick={() => setView("build")}>
                 Build
               </button>
@@ -197,16 +210,19 @@ export function PlanBuilder() {
                 Document
               </button>
             </div>
-            {view === "build" && (
-              <div className="seg" role="radiogroup" aria-label="Detail level">
-                <button type="button" role="radio" aria-checked={!advanced} onClick={() => setAdvanced(false)}>
-                  Simple
-                </button>
-                <button type="button" role="radio" aria-checked={advanced} onClick={() => setAdvanced(true)}>
-                  Advanced
-                </button>
-              </div>
-            )}
+          </div>
+          <div className="cs-cell">
+            <p className="cs-head">
+              <span className="label">Detail</span>
+            </p>
+            <div className="cs-control seg" role="radiogroup" aria-label="Detail level">
+              <button type="button" role="radio" aria-checked={!advanced} onClick={() => setAdvanced(false)}>
+                Simple
+              </button>
+              <button type="button" role="radio" aria-checked={advanced} onClick={() => setAdvanced(true)}>
+                Advanced
+              </button>
+            </div>
           </div>
         </div>
       </PageHero>
@@ -373,7 +389,7 @@ function PlanStatus({ analysis }: { analysis: ReturnType<typeof analyzePlan> }) 
           {analysis.completeness}% · {analysis.checksPassed}/{analysis.checksTotal} checks
         </dd>
         <dd className="gauge" aria-hidden="true">
-          <span style={{ width: `${analysis.completeness}%` }} />
+          <span style={{ width: `${analysis.completeness}%`, ["--pct" as string]: analysis.completeness }} />
         </dd>
       </div>
       <div>

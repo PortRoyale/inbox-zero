@@ -1,6 +1,7 @@
 import { PageHero } from "@/components/PageHero";
-import { Balloon } from "@/components/primitives";
 import { SheetTabs, type SheetTab } from "@/components/SheetTabs";
+import { SpecTable } from "@/components/structure";
+import { SourceTable } from "@/components/seo/Indexes";
 import { Crumbs } from "@/components/seo/Crumbs";
 import { StartPlanButton } from "@/components/seo/StartPlanButton";
 import type { Brief } from "@/lib/seo/brief";
@@ -50,19 +51,27 @@ export function BriefView({
           ) : (
             <h2>Your dated action plan</h2>
           )}
-          <ol className="brief-steps">
-            {brief.steps.map((s) => (
-              <li key={s.title}>
-                <span className={`when${s.now ? " is-now" : ""}`}>{s.when}</span>
-                <div>
-                  <p>
-                    <strong>{s.title}.</strong> {s.body}
-                  </p>
-                  <p className="code muted">{s.ref}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          <SpecTable
+            className="brief-plan"
+            rows={brief.steps}
+            rowKey={(st) => st.title}
+            rowClass={(st) => (st.now ? "is-now" : undefined)}
+            cols={[
+              { key: "when", label: "When", width: "9rem", code: true, render: (st) => <span className={`when${st.now ? " is-now" : ""}`}>{st.when}</span> },
+              {
+                key: "action",
+                label: "Action",
+                head: true,
+                render: (st) => (
+                  <>
+                    <span className="cell-title">{st.title}</span>
+                    <span className="cell-body">{st.body}</span>
+                  </>
+                ),
+              },
+              { key: "basis", label: "Basis", width: "9.5rem", code: true, render: (st) => st.ref },
+            ]}
+          />
         </>
       ),
     },
@@ -74,27 +83,36 @@ export function BriefView({
             content: (
               <>
                 <h2>What is different for {industry.name.toLowerCase()}</h2>
-                <ul className="bullets">
-                  <li>{industry.classNote}</li>
-                  {industry.pitfalls.map((p) => (
-                    <li key={p}>{p}</li>
-                  ))}
-                  {industry.alsoRegulatedBy.length > 0 && <li>Also check: {industry.alsoRegulatedBy.join("; ")}.</li>}
-                </ul>
+                <SpecTable
+                  rows={[
+                    { topic: "Classification", detail: industry.classNote },
+                    ...industry.pitfalls.map((p, i) => ({ topic: i === 0 ? "Watch out for" : "", detail: p })),
+                    ...(industry.alsoRegulatedBy.length ? [{ topic: "Also check", detail: `${industry.alsoRegulatedBy.join("; ")}.` }] : []),
+                  ]}
+                  rowKey={(r) => r.detail.slice(0, 40)}
+                  cols={[
+                    { key: "topic", label: "Topic", width: "10rem", code: true, render: (r) => r.topic },
+                    { key: "detail", label: "Detail", render: (r) => r.detail },
+                  ]}
+                />
                 <h3>Risks auditors will expect you to address</h3>
-                <ul className="bullets">
-                  {industry.topRisks.map((r) => (
-                    <li key={r}>{r}</li>
-                  ))}
-                </ul>
+                <SpecTable
+                  numbered
+                  rows={industry.topRisks}
+                  rowKey={(r) => r}
+                  cols={[
+                    { key: "risk", label: "Risk", head: true, render: (r) => r },
+                  ]}
+                />
                 <h3>Standards to look at</h3>
-                <ul className="bullets">
-                  {industry.standards.map((s) => (
-                    <li key={s.name}>
-                      <strong>{s.name}</strong>: {s.note}
-                    </li>
-                  ))}
-                </ul>
+                <SpecTable
+                  rows={industry.standards}
+                  rowKey={(st) => st.name}
+                  cols={[
+                    { key: "std", label: "Standard", width: "13rem", code: true, render: (st) => st.name },
+                    { key: "note", label: "What it covers", render: (st) => st.note },
+                  ]}
+                />
               </>
             ),
           },
@@ -108,21 +126,29 @@ export function BriefView({
             content: (
               <>
                 <h2>{country.inEU ? `Selling in ${country.name}` : `Exporting from ${country.name} to the EU`}</h2>
-                <ul className="bullets">
-                  {[...(country.exporterNotes ?? []), ...country.localContext].map((x) => (
-                    <li key={x}>{x}</li>
-                  ))}
-                  {country.inEU && <li>Official languages for user information: {country.languages.join(", ")}.</li>}
-                  {country.authority && (
-                    <li>
-                      National cybersecurity authority:{" "}
-                      <a href={country.authority.url} target="_blank" rel="noreferrer">
-                        {country.authority.name}
-                      </a>
-                      .
-                    </li>
-                  )}
-                </ul>
+                <SpecTable
+                  rows={[
+                    ...(country.inEU ? [{ topic: "User information", detail: <>Official languages: {country.languages.join(", ")}.</> }] : []),
+                    ...(country.authority
+                      ? [
+                          {
+                            topic: "Authority",
+                            detail: (
+                              <a href={country.authority.url} target="_blank" rel="noreferrer">
+                                {country.authority.name}
+                              </a>
+                            ),
+                          },
+                        ]
+                      : []),
+                    ...[...(country.exporterNotes ?? []), ...country.localContext].map((x, i) => ({ topic: i === 0 ? "Notes" : "", detail: <>{x}</> })),
+                  ]}
+                  rowKey={(_r, i) => String(i)}
+                  cols={[
+                    { key: "topic", label: "Topic", width: "10rem", code: true, render: (r) => r.topic },
+                    { key: "detail", label: "Detail", render: (r) => r.detail },
+                  ]}
+                />
               </>
             ),
           },
@@ -135,16 +161,15 @@ export function BriefView({
       content: (
         <>
           <h2>Critical requirements to cover first</h2>
-          <ol className="link-list">
-            {brief.checklist.map((r, i) => (
-              <li key={r.id} className="row">
-                <Balloon>{i + 1}</Balloon>
-                <span>
-                  <strong>{r.title}</strong> <span className="code muted">{r.craRef}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
+          <SpecTable
+            numbered
+            rows={brief.checklist}
+            rowKey={(r) => r.id}
+            cols={[
+              { key: "req", label: "Requirement", head: true, render: (r) => r.title },
+              { key: "basis", label: "Basis", width: "14rem", code: true, render: (r) => r.craRef },
+            ]}
+          />
         </>
       ),
     },
@@ -167,18 +192,7 @@ export function BriefView({
       id: "sources",
       label: "Sources",
       content: (
-        <div className="sources">
-          <h2>Sources</h2>
-          <ul>
-            {dedupeSources([...(industry?.sources ?? []), ...(country?.sources ?? [])]).map((s) => (
-              <li key={s.url}>
-                <a href={s.url} target="_blank" rel="noreferrer">
-                  {s.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <SourceTable sources={dedupeSources([...(industry?.sources ?? []), ...(country?.sources ?? [])])} />
       ),
     },
   ];

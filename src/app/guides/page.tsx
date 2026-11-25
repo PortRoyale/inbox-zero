@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { guides } from "@/content/guides";
 import { SiteHeader } from "@/components/SiteHeader";
 import { PageHero } from "@/components/PageHero";
-import { LinkGrid } from "@/components/seo/LinkGrid";
+import { GuideRegister } from "@/components/seo/Indexes";
 
 export const metadata: Metadata = {
   title: "Cyber Resilience Act guides",
@@ -27,7 +27,7 @@ export default function GuidesIndex() {
             lead="Plain answers to what product teams search for, each with sources and a next step."
           />
           <section className="sheet">
-            <LinkGrid title="All guides" links={guides.map((g) => ({ href: `/guides/${g.slug}/`, label: g.title }))} />
+            <GuideRegister title="All guides" guides={guides} />
           </section>
         </div>
       </main>

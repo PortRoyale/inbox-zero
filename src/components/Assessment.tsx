@@ -173,7 +173,7 @@ export function Assessment() {
                   bare: true,
                   render: () => (
                     <span className="gauge" role="img" aria-label={`${cat?.percent ?? 0}%`}>
-                      <span style={{ width: `${cat?.percent ?? 0}%` }} />
+                      <span style={{ width: `${cat?.percent ?? 0}%`, ["--pct" as string]: cat?.percent ?? 0 }} />
                     </span>
                   ),
                 },
@@ -261,7 +261,7 @@ function Report({
                 <span className="code">{c.percent}%</span>
               </div>
               <div className="gauge">
-                <span style={{ width: `${c.percent}%` }} />
+                <span style={{ width: `${c.percent}%`, ["--pct" as string]: c.percent }} />
               </div>
             </li>
           ))}
