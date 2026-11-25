@@ -463,6 +463,28 @@
   padding-inline: var(--s-4);
 }
 
+/* Phones: four or more choices become a 2-column grid that fills the width, with ruled cells. */
+@media (max-width: 40rem) {
+  .seg:has(> :nth-child(4)) {
+    display: grid;
+    width: 100%;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .seg:has(> :nth-child(4)) > button {
+    border-right: var(--lw-thin) solid var(--ink);
+    border-bottom: var(--lw-thin) solid var(--ink);
+    white-space: normal;
+  }
+  .seg:has(> :nth-child(4)) > button:nth-child(2n) {
+    border-right: 0;
+  }
+  .seg:has(> :nth-child(4)) > button:nth-last-child(-n + 2):nth-child(odd),
+  .seg:has(> :nth-child(4)) > button:nth-last-child(-n + 2):nth-child(odd) + button {
+    border-bottom: 0;
+  }
+}
+
 .seg button::before {
   content: "✓";
   display: inline-block;

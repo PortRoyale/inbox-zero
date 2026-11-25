@@ -262,7 +262,24 @@ export function VerifySignature() {
         lead="Paste a signed plan revision or an evidence export. The signature is valid only when both the classical (Ed25519) and post-quantum (ML-DSA-65) signatures verify."
       />
       <section className="sheet stack-sm">
-        <AreaField id="verify-json" label="Signed statement or evidence file (JSON)" rows={10} value={text} onChange={setText} placeholder='{"statement": {...}, "signature": {...}}' />
+        <label className="field" htmlFor="verify-file">
+          <span className="label">Evidence or revision file</span>
+          <input
+            id="verify-file"
+            type="file"
+            accept="application/json,.json"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              setResult(null);
+              if (!f) return;
+              if (f.size > 4 * 1024 * 1024) return setError("That file is larger than 4 MB.");
+              setError("");
+              setText(await f.text());
+            }}
+          />
+          <span className="hint">The JSON file you downloaded from Evidence export, or a revision statement. Or paste it below.</span>
+        </label>
+        <AreaField id="verify-json" label="Signed statement or evidence file (JSON)" rows={8} value={text} onChange={setText} placeholder='{"statement": {...}, "signature": {...}}' />
         <div className="row">
           <button type="button" className="btn btn-primary" onClick={check} disabled={!text.trim() || hashMode}>
             Verify

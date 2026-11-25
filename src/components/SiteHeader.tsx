@@ -11,13 +11,19 @@ const nav = [
 ] as const;
 
 export function SiteHeader({ current }: { current?: View }) {
-  const links = (
+  // On phones "Sign in" moves into the scrolling nav row so the top row keeps one call to action.
+  const links = (narrow: boolean) => (
     <nav aria-label="Main">
       {nav.map((item) => (
         <a key={item.href} href={item.href} aria-current={item.view && item.view === current ? "page" : undefined}>
           {item.label}
         </a>
       ))}
+      {narrow && (
+        <a className="masthead-signin-narrow" href={paths.login}>
+          Sign in
+        </a>
+      )}
     </nav>
   );
   return (
@@ -35,7 +41,7 @@ export function SiteHeader({ current }: { current?: View }) {
           </span>
           <span>{site.name.toUpperCase()}</span>
         </a>
-        <div className="masthead-nav-wide">{links}</div>
+        <div className="masthead-nav-wide">{links(false)}</div>
         <div className="masthead-actions">
           <a className="masthead-signin" href={paths.login}>
             Sign in
@@ -46,7 +52,7 @@ export function SiteHeader({ current }: { current?: View }) {
         </div>
       </div>
       <div className="masthead-nav-narrow">
-        <div className="wrap">{links}</div>
+        <div className="wrap">{links(true)}</div>
       </div>
     </header>
   );

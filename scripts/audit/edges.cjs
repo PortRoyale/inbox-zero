@@ -4,7 +4,21 @@
 // narrower than the answer tiles above it). Usage: node edges.cjs [base]
 const { chromium } = require('playwright');
 const BASE = process.argv[2] || 'http://localhost:4600';
-const COLUMNS = ['.run-pane', '.run-setup', '.run-q-head', '.step-body', '.step-body > .stack-sm', '.step-body > .form-grid', '.record', '.report', '.tab-panel', '.section-head', '.sheet > .stack', '.brief-section', '.guide-body'];
+const COLUMNS = ['.run-pane', '.run-setup', '.run-q-head', '.step-body', '.step-body > .stack-sm', '.step-body > .form-grid', '.record', '.report', '.tab-panel', '.section-head', '.sheet > .stack', '.brief-section', '.guide-body', '.sheet.stack-sm', '.sheet.stack', '.stack-flow', '.stack-flow > .stack-sm'];
+const SAMPLE_SBOM = process.env.SAMPLE_SBOM;
+// Optional: APP_STATE (a Playwright storage state of a signed-in user) and APP_PRODUCT (a product id)
+// add the signed-in app pages to the audit.
+const APP_STATE = process.env.APP_STATE;
+const APP_PRODUCT = process.env.APP_PRODUCT;
+const appViews = APP_STATE
+  ? [
+      ['app-dashboard', '/app/', null],
+      ...(APP_PRODUCT ? ['plan', 'revisions', 'releases', 'sbom', 'incidents', 'evidence', 'settings'].map((t) => [`app-${t}`, `/app/product/?id=${APP_PRODUCT}&tab=${t}`, null]) : []),
+      ['app-team', '/app/team/', null],
+      ['app-account', '/app/account/', null],
+      ['app-admin', '/admin/', null],
+    ]
+  : [];
 
 async function walk(p, root, key) {
   for (let i = 0; i < 60; i++) {
@@ -32,15 +46,23 @@ const views = [
   ['guide', '/guides/vulnerability-reporting/', null],
   ['guides', '/guides/', null],
   ['hub', '/cra/', null],
+  ['tools', '/tools/', null],
+  ...(SAMPLE_SBOM ? [['sbom-check', '/tools/sbom-check/', async (p) => { await p.setInputFiles('#tool-sbom', SAMPLE_SBOM); await p.waitForTimeout(1500); }]] : []),
+  ['incident-clock', '/tools/incident-clock/', async (p) => { await p.evaluate(() => localStorage.clear()); await p.reload({ waitUntil: 'networkidle' }); await p.fill('#ct-product', 'Thermostat'); await p.getByRole('button', { name: 'Start the clock' }).click(); await p.waitForTimeout(300); }],
+  ['verify', '/verify-signature/', null],
+  ['security', '/security/', null],
+  ['terms', '/terms/', null],
+  ['login', '/login/', null],
+  ['signup', '/signup/', null],
 ];
 
 (async () => {
   const b = await chromium.launch();
   let fails = 0;
   for (const width of [1280, 390]) {
-    const ctx = await b.newContext({ viewport: { width, height: 900 } });
+    const ctx = await b.newContext({ viewport: { width, height: 900 }, storageState: APP_STATE || undefined });
     const p = await ctx.newPage();
-    for (const [name, path, prep] of views) {
+    for (const [name, path, prep] of [...views, ...appViews]) {
       if (p.url() !== BASE + path || !prep) await p.goto(BASE + path, { waitUntil: 'networkidle' });
       if (prep) await prep(p);
       const bad = await p.evaluate((cols) => {

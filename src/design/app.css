@@ -89,6 +89,11 @@
   gap: var(--s-4);
 }
 
+.app-who > :not(.app-org) {
+  flex: none;
+  white-space: nowrap;
+}
+
 .app-org {
   font-family: var(--font-code);
   font-size: var(--t-2);
@@ -187,6 +192,11 @@
 
 .count-tag {
   width: 13ch;
+}
+
+/* Countdowns ("18 h 43 min") need more room; they form their own fixed-width family. */
+.count-tag.is-wide {
+  width: 18ch;
 }
 
 .sev-tag {
@@ -606,8 +616,20 @@
 }
 
 @media (max-width: 48rem) {
+  /* The wordmark keeps its size; the team name gives way and truncates. */
   .app-masthead .wrap {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--s-4);
+  }
+  .app-who {
+    justify-content: flex-end;
+    min-width: 0;
+  }
+  .app-org {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .app-masthead nav {
     grid-column: 1 / -1;
@@ -698,6 +720,23 @@
   text-transform: uppercase;
   text-decoration: none;
   color: var(--ink-2) !important;
+}
+
+.masthead-cta {
+  white-space: nowrap;
+}
+
+.masthead-signin-narrow {
+  display: none;
+}
+
+@media (max-width: 40rem) {
+  .masthead-signin {
+    display: none;
+  }
+  .masthead-signin-narrow {
+    display: inline;
+  }
 }
 
 .masthead-signin:hover {

@@ -6,7 +6,7 @@ import { IncidentDetailsFields, type CaseFields } from "@/components/tools/Incid
 import { SpecTable } from "@/components/structure";
 import { fromLocalInput, IncidentClock, toLocalInput, type TimeField } from "@/components/tools/IncidentClock";
 import { api } from "@/lib/client/api";
-import { formatRemaining, incidentMilestones, nextDeadline, type IncidentKind, type IncidentTimes } from "@/lib/incidents";
+import { incidentMilestones, nextDeadline, type IncidentKind, type IncidentTimes } from "@/lib/incidents";
 import type { Plan } from "@/lib/plan/model";
 import { Act, ErrorLine, useLoad, when } from "@/components/app/AppShell";
 
@@ -30,6 +30,17 @@ type IncidentData = {
   sensitivity?: "low" | "medium" | "high";
   srpReference?: string;
 };
+// Countdown for a fixed-width badge: at most 14 characters ("23 h 59 min", "Late 13 d 23 h").
+function badgeTime(ms: number): string {
+  const min = Math.floor(Math.abs(ms) / 60_000);
+  const d = Math.floor(min / 1440);
+  const h = Math.floor((min % 1440) / 60);
+  const m = min % 60;
+  if (ms < 0) return `Late ${d ? `${d} d${h ? ` ${h} h` : ""}` : h ? `${h} h` : `${Math.max(m, 1)} min`}`;
+  if (min < 1) return "< 1 min";
+  return d ? `${d} d${h ? ` ${h} h` : ""}` : h ? `${h} h${m ? ` ${m} min` : ""}` : `${m} min`;
+}
+
 // In an update, "" or null clears a stored value.
 type DataPatch = Partial<Omit<IncidentData, "suspectedMalicious">> & { suspectedMalicious?: boolean | null };
 type Incident = { id: string; kind: IncidentKind; times: IncidentTimes; data: IncidentData; createdAt: number; updatedAt: number };
@@ -106,10 +117,10 @@ export function ProductIncidents({ productId, productName, canEdit }: { productI
                 label: "Next deadline",
                 width: "12rem",
                 render: (i) => {
-                  if (i.times.closedAt) return <span className="count-tag is-neutral">Closed</span>;
+                  if (i.times.closedAt) return <span className="count-tag is-wide is-neutral">Closed</span>;
                   const next = nextDeadline(incidentMilestones(i.kind, i.times, now));
-                  if (!next || next.remainingMs === null) return <span className="count-tag is-good">None open</span>;
-                  return <span className={`count-tag ${next.state === "overdue" ? "is-bad" : "is-partial"}`}>{formatRemaining(next.remainingMs)}</span>;
+                  if (!next || next.remainingMs === null) return <span className="count-tag is-wide is-good">None open</span>;
+                  return <span className={`count-tag is-wide ${next.state === "overdue" ? "is-bad" : "is-partial"}`}>{badgeTime(next.remainingMs)}</span>;
                 },
               },
             ]}

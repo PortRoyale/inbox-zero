@@ -3,7 +3,7 @@
 // at desktop and phone widths. Exits non-zero on any mismatch.
 const { chromium } = require('playwright');
 const BASE = process.argv[2] || 'http://localhost:4600';
-const FAMILIES = ['.run-answer-chip', '.prio', '.risk-level', '.issue-sev', '.outcome-tag', '.step-state', '.run-map-meta', '.risk-table .risk-level'];
+const FAMILIES = ['.run-answer-chip', '.prio', '.risk-level', '.issue-sev', '.outcome-tag', '.step-state', '.run-map-meta', '.risk-table .risk-level', '.count-tag:not(.is-wide)', '.count-tag.is-wide', '.sev-tag'];
 
 async function walkReadiness(p) {
   await p.evaluate(() => localStorage.clear());
@@ -39,6 +39,20 @@ const views = [
       await p.waitForTimeout(400);
     },
   },
+  ...(process.env.SAMPLE_SBOM
+    ? [{ name: 'sbom-check', path: '/tools/sbom-check/', prep: async (p) => { await p.setInputFiles('#tool-sbom', process.env.SAMPLE_SBOM); await p.waitForTimeout(1500); } }]
+    : []),
+  {
+    name: 'incident-clock',
+    path: '/tools/incident-clock/',
+    prep: async (p) => {
+      await p.evaluate(() => localStorage.clear());
+      await p.reload({ waitUntil: 'networkidle' });
+      await p.fill('#ct-product', 'Thermostat');
+      await p.getByRole('button', { name: 'Start the clock' }).click();
+      await p.waitForTimeout(300);
+    },
+  },
   ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({
     name: `plan-step-${n}`,
     path: '/plan/',
@@ -51,15 +65,23 @@ const views = [
   })),
 ];
 
+// Optional signed-in app pages, as in edges.cjs.
+const APP_STATE = process.env.APP_STATE;
+const APP_PRODUCT = process.env.APP_PRODUCT;
+if (APP_STATE) {
+  views.push({ name: 'app-dashboard', path: '/app/' }, { name: 'app-team', path: '/app/team/' }, { name: 'app-account', path: '/app/account/' }, { name: 'app-admin', path: '/admin/' });
+  if (APP_PRODUCT) for (const t of ['sbom', 'incidents', 'releases']) views.push({ name: `app-${t}`, path: `/app/product/?id=${APP_PRODUCT}&tab=${t}` });
+}
+
 (async () => {
   const b = await chromium.launch();
   let failures = 0;
   for (const width of [1280, 390]) {
-    const ctx = await b.newContext({ viewport: { width, height: 900 } });
+    const ctx = await b.newContext({ viewport: { width, height: 900 }, storageState: APP_STATE || undefined });
     const p = await ctx.newPage();
     for (const v of views) {
       await p.goto(BASE + v.path, { waitUntil: 'networkidle' });
-      await v.prep(p);
+      if (v.prep) await v.prep(p);
       const report = await p.evaluate((families) => {
         const out = [];
         for (const sel of families) {
