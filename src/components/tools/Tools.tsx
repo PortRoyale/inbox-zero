@@ -5,6 +5,7 @@ import { AreaField, SelectField, TextField } from "@/components/plan/fields";
 import { PageHero } from "@/components/PageHero";
 import { SpecTable } from "@/components/structure";
 import { fromLocalInput, IncidentClock, toLocalInput, type TimeField } from "@/components/tools/IncidentClock";
+import { IncidentDetailsFields, type CaseFields } from "@/components/tools/IncidentDetails";
 import { FindingsTable, QualityTable, SeverityCounts, type FindingView } from "@/components/tools/SbomResults";
 import type { DraftData, IncidentKind, IncidentTimes } from "@/lib/incidents";
 import { paths } from "@/lib/paths";
@@ -158,7 +159,7 @@ export function IncidentClockTool() {
   }, [state]);
 
   const setTime = (f: TimeField, ms: number | null) => setState((s) => (s ? { ...s, times: { ...s.times, [f]: ms } } : s));
-  const setDraft = (k: keyof ClockState["draft"]) => (v: string) => setState((s) => (s ? { ...s, draft: { ...s.draft, [k]: v } } : s));
+  const setDraft = (patch: Partial<CaseFields>) => setState((s) => (s ? { ...s, draft: { ...s.draft, ...patch } } : s));
 
   return (
     <div className="wrap stack" data-tool="gate">
@@ -216,20 +217,10 @@ export function IncidentClockTool() {
             </div>
             <IncidentClock kind={state.kind} times={state.times} draft={{ ...state.draft, awareAt: state.times.awareAt }} onTime={setTime} />
           </section>
-          <section className="sheet stack-sm">
+          <section className="sheet stack-sm" id="case-details">
             <h2>Details for the reports</h2>
-            <div className="form-grid">
-              <TextField id="cd-man" label="Manufacturer" value={state.draft.manufacturer ?? ""} onChange={setDraft("manufacturer")} />
-              <TextField id="cd-ms" label="Member State of main establishment" value={state.draft.memberState ?? ""} onChange={setDraft("memberState")} />
-              <div className="span-2">
-                <AreaField id="cd-sum" label="Summary" rows={2} value={state.draft.summary ?? ""} onChange={setDraft("summary")} />
-              </div>
-              <TextField id="cd-sev" label="Severity" value={state.draft.severity ?? ""} onChange={setDraft("severity")} />
-              <TextField id="cd-contact" label="Contact" value={state.draft.contact ?? ""} onChange={setDraft("contact")} />
-              <div className="span-2">
-                <AreaField id="cd-meas" label="Measures taken and what users can do" rows={2} value={state.draft.measuresTaken ?? ""} onChange={setDraft("measuresTaken")} />
-              </div>
-            </div>
+            <p className="muted">Fill these once; every draft above updates as you type.</p>
+            <IncidentDetailsFields idPrefix="cd" kind={state.kind} value={state.draft} onChange={setDraft} askProduct />
             <p className="muted">
               Running this for real? The <a href={hashMode ? paths.pricing : "/signup/"}>incident clock in your workspace</a> keeps the timeline as evidence and shares it with your team.
             </p>

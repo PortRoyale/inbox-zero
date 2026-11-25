@@ -1,12 +1,15 @@
 import type { ParsedSbom, SbomComponent } from "./parse";
 
-export type QualityCheck = { id: string; label: string; passed: boolean; detail: string };
+// pass: met; partial: some components meet it; gap: not met at all.
+export type QualityLevel = "pass" | "partial" | "gap";
+export type QualityCheck = { id: string; label: string; passed: boolean; level: QualityLevel; detail: string };
 export type SbomQuality = { score: number; checks: QualityCheck[] };
 
 // A per-component check passes when at least this share of components meets it.
 export const QUALITY_COVERAGE_THRESHOLD = 0.95;
 
-type Outcome = { passed: boolean; detail: string };
+// share: the fraction of the check that is met, for partial credit (1 when passed, 0 when not met).
+type Outcome = { passed: boolean; detail: string; share?: number };
 type CheckDef = { id: string; label: string; weight: number; run: (s: ParsedSbom) => Outcome };
 
 function coverage(s: ParsedSbom, test: (c: SbomComponent) => boolean, what: string): Outcome {
@@ -14,7 +17,7 @@ function coverage(s: ParsedSbom, test: (c: SbomComponent) => boolean, what: stri
   if (total === 0) return { passed: false, detail: "No components listed" };
   const count = s.components.filter(test).length;
   const noun = total === 1 ? "component has" : "components have";
-  return { passed: count / total >= QUALITY_COVERAGE_THRESHOLD, detail: `${count} of ${total} ${noun} ${what}` };
+  return { passed: count / total >= QUALITY_COVERAGE_THRESHOLD, share: count / total, detail: `${count} of ${total} ${noun} ${what}` };
 }
 
 // Based on the NTIA minimum elements and CRA Annex I Part II(1).
@@ -46,13 +49,12 @@ const CHECKS: CheckDef[] = [
   },
   {
     id: "dependencies",
-    label: "Dependencies listed",
+    label: "Dependency relationships",
     weight: 2,
     run: (s) => {
-      const n = s.components.length;
-      return n > 0
-        ? { passed: true, detail: `${n} ${n === 1 ? "component" : "components"} listed` }
-        : { passed: false, detail: "No components listed" };
+      const n = s.dependencyLinks;
+      if (n > 0) return { passed: true, detail: `${n} dependency ${n === 1 ? "relationship" : "relationships"} recorded` };
+      return { passed: false, detail: s.components.length ? "Components are listed, but not how they depend on each other" : "No components listed" };
     },
   },
   {
@@ -93,9 +95,11 @@ export function sbomQuality(s: ParsedSbom): SbomQuality {
   let earned = 0;
   const checks = CHECKS.map((def) => {
     const outcome = def.run(s);
+    const share = outcome.passed ? 1 : (outcome.share ?? 0);
     total += def.weight;
-    if (outcome.passed) earned += def.weight;
-    return { id: def.id, label: def.label, passed: outcome.passed, detail: outcome.detail };
+    earned += def.weight * share;
+    const level: QualityLevel = outcome.passed ? "pass" : share > 0 ? "partial" : "gap";
+    return { id: def.id, label: def.label, passed: outcome.passed, level, detail: outcome.detail };
   });
   return { score: Math.round((100 * earned) / total), checks };
 }

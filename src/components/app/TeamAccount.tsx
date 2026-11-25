@@ -5,12 +5,12 @@ import { SelectField, TextField } from "@/components/plan/fields";
 import { ConfirmButton } from "@/components/primitives";
 import { SpecTable } from "@/components/structure";
 import { api, apiDownload } from "@/lib/client/api";
-import { Act, can, ErrorLine, PageTitle, useApp, useLoad, when, type Role } from "@/components/app/AppShell";
+import { Act, can, ErrorLine, PageTitle, planLabel, useApp, useLoad, when, type Role } from "@/components/app/AppShell";
 
 type Member = { userId: string; role: Role; joinedAt: number; name: string; email: string };
 type Invite = { id: string; email: string; role: Role; expiresAt: number; sentAt: number };
 type AuditEntry = { id: number; userId: string | null; action: string; target: string; meta: Record<string, unknown>; at: number };
-type OrgInfo = { id: string; name: string; tier: "starter" | "team"; role: Role; limits: { products: number; members: number; roles: Role[] } };
+type OrgInfo = { id: string; name: string; tier: "starter" | "team"; trial: boolean; role: Role; limits: { products: number; members: number; roles: Role[] } };
 
 const ROLE_HELP: Record<Role, string> = {
   owner: "Everything, including billing and owners",
@@ -60,7 +60,7 @@ export function TeamPage() {
 
   return (
     <>
-      <PageTitle label="Team" cells={[org.name, `${org.tier} plan`, `${members.data?.members.length ?? 0}/${info.data?.limits.members ?? "?"} people`]} title="Team and roles" lead="Invite colleagues and choose what each can do. Every change is in the audit log." />
+      <PageTitle label="Team" cells={[org.name, planLabel(org), `${members.data?.members.length ?? 0}/${info.data?.limits.members ?? "?"} people`]} title="Team and roles" lead="Invite colleagues and choose what each can do. Every change is in the audit log." />
 
       <section className="sheet stack-sm" aria-labelledby="members-title">
         <h2 id="members-title">Members</h2>

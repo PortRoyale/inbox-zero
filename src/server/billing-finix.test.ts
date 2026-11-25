@@ -62,6 +62,19 @@ describe("Finix billing", () => {
     expect(sent.body).toMatchObject({ merchant_id: "MUexample", amount_details: { total_amount: 178800 }, tags: { org_id: owner.orgId, tier: "starter" } });
   });
 
+  it("refuses Starter for a team that outgrew it during the trial, and says what to change", async () => {
+    const owner = await signedInUser("Grower", "Grow Co");
+    await owner.c.post(`/orgs/${owner.orgId}/products`, { name: "One" });
+    await owner.c.post(`/orgs/${owner.orgId}/products`, { name: "Two" });
+    await owner.c.post(`/orgs/${owner.orgId}/invites`, { email: "approver-grow@example.com", role: "approver" });
+    const before = requests.length;
+    const res = await owner.c.post(`/orgs/${owner.orgId}/billing/checkout`, { tier: "starter" });
+    expect(res.status).toBe(400);
+    expect(res.data.error).toMatch(/archive 1 of your 2 products/);
+    expect(requests.length).toBe(before);
+    expect((await owner.c.post(`/orgs/${owner.orgId}/billing/checkout`, { tier: "team" })).status).toBe(200);
+  });
+
   it("activates a year only for a correctly signed, completed checkout, exactly once", async () => {
     const owner = await signedInUser("Payer Two", "Pay Two");
     await owner.c.post(`/orgs/${owner.orgId}/billing/checkout`, { tier: "team" });

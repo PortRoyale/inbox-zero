@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { examplePlan } from "@/lib/plan/model";
 import { get } from "@/server/db";
+import { grantManual } from "@/server/services/billing";
 import { lastLink, signedInUser, TestClient } from "@/server/test/client";
 
 type Created = { id: string };
@@ -26,6 +27,12 @@ describe("products and plans", () => {
     const plan = await owner.c.get<{ plan: { product: { name: string; industry: string } }; version: number }>(`/products/${id}/plan`);
     expect(plan.data.plan.product).toMatchObject({ name: "Thermostat", industry: "smart-home" });
     expect(plan.data.version).toBe(1);
+    // During the trial a team can try Team limits; on a paid Starter plan the limit is one product.
+    const trialSecond = await owner.c.post<{ id: string }>(`/orgs/${owner.orgId}/products`, { name: "Trial second" });
+    expect(trialSecond.status).toBe(201);
+    await owner.c.post(`/products/${trialSecond.data.id}/delete`, { confirmName: "Trial second" });
+    const me = await owner.c.get<{ user: { id: string } }>("/me");
+    grantManual(me.data.user.id, owner.orgId, "starter", null);
     const second = await owner.c.post(`/orgs/${owner.orgId}/products`, { name: "Second" });
     expect(second.status).toBe(400);
     expect(second.data.error).toMatch(/covers 1 product/);
@@ -136,6 +143,22 @@ describe("release records, incidents and evidence", () => {
     expect(future.status).toBe(400);
     const done = await owner.c.patch<{ times: { earlyWarningAt: number } }>(`/products/${id}/incidents/${created.data.id}`, { times: { earlyWarningAt: aware + 3600_000 } });
     expect(done.data.times.earlyWarningAt).toBe(aware + 3600_000);
+  });
+
+  it("stores case details, including overrides, and clears them with empty values", async () => {
+    const owner = await signedInUser("Case Owner", "Case Co");
+    const id = await productFor(owner);
+    const created = await owner.c.post<Created>(`/products/${id}/incidents`, { kind: "incident", awareAt: Date.now() - 3600_000, data: { title: "Ransomware on build server" } });
+    const url = `/products/${id}/incidents/${created.data.id}`;
+    type Data = { data: Record<string, unknown> };
+    const set = await owner.c.patch<Data>(url, { data: { manufacturer: "Acme GmbH", memberState: "Germany", contact: "sec@acme.example", suspectedMalicious: true, summary: "Encrypted build hosts" } });
+    expect(set.status).toBe(200);
+    expect(set.data.data).toMatchObject({ manufacturer: "Acme GmbH", memberState: "Germany", suspectedMalicious: true, title: "Ransomware on build server" });
+    const cleared = await owner.c.patch<Data>(url, { data: { manufacturer: "", suspectedMalicious: null } });
+    expect(cleared.data.data.manufacturer).toBeUndefined();
+    expect(cleared.data.data.suspectedMalicious).toBeUndefined();
+    expect(cleared.data.data).toMatchObject({ memberState: "Germany", summary: "Encrypted build hosts", title: "Ransomware on build server" });
+    expect((await owner.c.patch(url, { data: { title: "" } })).status).toBe(400);
   });
 
   it("exports a signed evidence bundle that verifies and detects edits", async () => {

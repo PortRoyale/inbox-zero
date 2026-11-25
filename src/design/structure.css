@@ -919,6 +919,14 @@
   gap: var(--s-2) var(--s-5);
 }
 
+.foot-links-one {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.foot-links-one a {
+  overflow-wrap: anywhere;
+}
+
 .foot-links a {
   display: inline-block;
   padding-block: 2px;

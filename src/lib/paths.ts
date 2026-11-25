@@ -14,6 +14,8 @@ export const paths = hashRouting
       incidentClock: "#incident-clock",
       verify: "#tools",
       security: "#security",
+      terms: "#terms",
+      privacy: "#privacy",
       login: "#pricing",
     }
   : {
@@ -29,7 +31,9 @@ export const paths = hashRouting
       incidentClock: "/tools/incident-clock/",
       verify: "/verify-signature/",
       security: "/security/",
+      terms: "/terms/",
+      privacy: "/privacy/",
       login: "/login/",
     };
 
-export type View = "home" | "assessment" | "release-gate" | "plan" | "brief" | "pricing" | "tools" | "sbom-check" | "incident-clock" | "security";
+export type View = "home" | "assessment" | "release-gate" | "plan" | "brief" | "pricing" | "tools" | "sbom-check" | "incident-clock" | "security" | "terms" | "privacy";

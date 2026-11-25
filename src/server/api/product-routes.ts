@@ -26,7 +26,11 @@ const incidentData = v.object({
   severity: text(200),
   impact: text(),
   maliciousActor: text(),
-  suspectedMalicious: v.optional(v.bool()),
+  // null clears an earlier answer ("not decided yet").
+  suspectedMalicious: (value: unknown, path: string) => (value === null ? null : value === undefined ? undefined : v.bool()(value, path)),
+  manufacturer: text(200),
+  memberState: text(80),
+  contact: text(200),
   rootCause: text(),
   measuresTaken: text(),
   userMeasures: text(),

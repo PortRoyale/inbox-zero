@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { get } from "@/server/db";
+import { grantManual } from "@/server/services/billing";
 import { testOutbox } from "@/server/platform";
 import { lastLink, PASSWORD, signedInUser, TestClient } from "@/server/test/client";
 
@@ -17,7 +18,8 @@ describe("sign-up, verification and login", () => {
     expect(verified.status).toBe(200);
     const me = await c.get<{ user: { email: string; name: string; emailVerified: boolean }; orgs: { role: string; name: string }[] }>("/me");
     expect(me.data.user).toMatchObject({ email, name: "Founder", emailVerified: true });
-    expect(me.data.orgs).toEqual([expect.objectContaining({ role: "owner", name: "Acme", tier: "starter" })]);
+    // A new team is in its trial, which includes Team features.
+    expect(me.data.orgs).toEqual([expect.objectContaining({ role: "owner", name: "Acme", tier: "team", trial: true })]);
 
     await c.post("/auth/logout");
     expect((await c.get("/me")).status).toBe(401);
@@ -187,6 +189,9 @@ describe("teams, roles and invites", () => {
     const demote = await owner.c.patch(`/orgs/${owner.orgId}/members/${me.data.user.id}`, { role: "editor" });
     expect(demote.status).toBe(400);
     expect((await owner.c.del(`/orgs/${owner.orgId}/members/${me.data.user.id}`)).status).toBe(400);
+    // The trial includes Team roles; a paid Starter plan does not.
+    expect((await owner.c.post(`/orgs/${owner.orgId}/invites`, { email: "trial-appr@example.com", role: "approver" })).status).toBe(201);
+    grantManual(me.data.user.id, owner.orgId, "starter", null);
     const approver = await owner.c.post(`/orgs/${owner.orgId}/invites`, { email: "appr@example.com", role: "approver" });
     expect(approver.status).toBe(400);
     expect(approver.data.error).toMatch(/Team plan/);

@@ -27,6 +27,9 @@ export type ParsedSbom = {
   author?: string;
   subject?: string;
   components: SbomComponent[];
+  // Dependency relationships recorded (CycloneDX dependsOn entries, SPDX dependency and containment
+  // relationships). The NTIA minimum elements ask for these, not just a flat component list.
+  dependencyLinks: number;
 };
 
 export type ParseOptions = { maxComponents?: number };
@@ -152,7 +155,9 @@ function parseCycloneDx(doc: JsonObject, max: number): ParsedSbom {
     for (let i = children.length - 1; i >= 0; i--) stack.push(children[i]);
   }
 
-  const result: ParsedSbom = { format: "CycloneDX", specVersion, components: set.list() };
+  let dependencyLinks = 0;
+  for (const dep of getArr(doc, "dependencies")) dependencyLinks += getArr(dep, "dependsOn").filter((d) => typeof d === "string" && d).length;
+  const result: ParsedSbom = { format: "CycloneDX", specVersion, components: set.list(), dependencyLinks };
   const created = getStr(metadata, "timestamp");
   const tool = cdxTools(metadata);
   const author = cdxAuthor(metadata);
@@ -261,7 +266,12 @@ function parseSpdx(doc: JsonObject, max: number): ParsedSbom {
 
   const root = roots[0];
   const subject = root ? describe(getStr(root, "name"), getStr(root, "versionInfo")) : getStr(doc, "name");
-  const result: ParsedSbom = { format: "SPDX", specVersion: match[1], components: set.list() };
+  let dependencyLinks = 0;
+  for (const rel of getArr(doc, "relationships")) {
+    const type = getStr(rel, "relationshipType") ?? "";
+    if (/^(DEPENDS_ON|DEPENDENCY_OF|CONTAINS|CONTAINED_BY|STATIC_LINK|DYNAMIC_LINK|[A-Z]+_DEPENDENCY_OF)$/.test(type)) dependencyLinks++;
+  }
+  const result: ParsedSbom = { format: "SPDX", specVersion: match[1], components: set.list(), dependencyLinks };
   const created = getStr(creationInfo, "created");
   const tool = joinNames(tools);
   const author = joinNames(authors);

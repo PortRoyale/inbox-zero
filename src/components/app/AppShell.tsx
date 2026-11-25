@@ -5,7 +5,8 @@ import { ApiError, api, loginUrl } from "@/lib/client/api";
 import { site } from "@/lib/site";
 
 export type Role = "owner" | "admin" | "approver" | "editor" | "viewer";
-export type Org = { id: string; name: string; tier: "starter" | "team"; role: Role };
+export type Org = { id: string; name: string; tier: "starter" | "team"; role: Role; trial: boolean };
+export const planLabel = (o: { tier: string; trial?: boolean }) => (o.trial ? "Team trial" : `${o.tier} plan`);
 export type Me = { user: { id: string; email: string; name: string; emailVerified: boolean }; orgs: Org[]; superadmin: boolean };
 
 const RANK: Record<Role, number> = { owner: 4, admin: 3, approver: 2, editor: 1, viewer: 0 };

@@ -179,7 +179,7 @@ function Revisions({ productId }: { productId: string }) {
 function Releases({ productId, productName, canEdit }: { productId: string; productName: string; canEdit: boolean }) {
   const list = useLoad(() => api<{ releases: Release[] }>("GET", `/products/${productId}/releases`), [productId]);
   return (
-    <div className="stack">
+    <div className="stack-flow">
       <div className="stack-sm">
         <h2>Release records</h2>
         <ErrorLine error={list.error} />
@@ -288,7 +288,7 @@ function Settings({ productId, name, canEdit, isAdmin }: { productId: string; na
     }
   };
   return (
-    <div className="stack">
+    <div className="stack-flow">
       <section className="stack-sm">
         <h2>Product settings</h2>
         {canEdit && (

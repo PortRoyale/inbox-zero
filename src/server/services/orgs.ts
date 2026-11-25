@@ -20,31 +20,46 @@ export const TIERS = {
 } as const;
 export type Tier = keyof typeof TIERS;
 
-export type OrgSummary = { id: string; name: string; tier: Tier; role: Role };
+// trial: true while the team is in its free trial, which includes every Team feature.
+export type OrgSummary = { id: string; name: string; tier: Tier; role: Role; trial: boolean };
 
 const DAY = 86_400_000;
+export const TRIAL_DAYS = 14;
+
+type TierRow = { tier: Tier; created_at: number; b_status: string | null; b_until: number | null };
+const TIER_COLUMNS = "o.tier, o.created_at, b.status AS b_status, b.paid_until AS b_until";
+
+// The tier whose limits apply now. A paid plan sets orgs.tier; during the trial a team gets Team
+// limits so it can try everything the pricing page lists.
+function effectiveTier(r: TierRow, t = now()): { tier: Tier; trial: boolean } {
+  const paid = (r.b_status === "active" || r.b_status === "past_due") && (r.b_until === null || r.b_until > t);
+  if (paid) return { tier: r.tier, trial: false };
+  if (t < r.created_at + TRIAL_DAYS * DAY) return { tier: "team", trial: true };
+  return { tier: r.tier, trial: false };
+}
 
 export function orgName(id: string, sealed: string) {
   return open<string>(sealed, `org:${id}:name`);
 }
 
 export function myOrgs(userId: string): OrgSummary[] {
-  return all<{ id: string; name_sealed: string; tier: Tier; role: Role }>(
-    `SELECT o.id, o.name_sealed, o.tier, m.role FROM memberships m JOIN orgs o ON o.id = m.org_id
-     WHERE m.user_id = $u ORDER BY o.created_at`,
+  return all<TierRow & { id: string; name_sealed: string; role: Role }>(
+    `SELECT o.id, o.name_sealed, ${TIER_COLUMNS}, m.role FROM memberships m JOIN orgs o ON o.id = m.org_id
+     LEFT JOIN billing b ON b.org_id = o.id WHERE m.user_id = $u ORDER BY o.created_at`,
     { u: userId },
-  ).map((r) => ({ id: r.id, name: orgName(r.id, r.name_sealed), tier: r.tier, role: r.role }));
+  ).map((r) => ({ id: r.id, name: orgName(r.id, r.name_sealed), role: r.role, ...effectiveTier(r) }));
 }
 
 // Returns 404 rather than 403 when the user is not a member, so ids of other teams cannot be probed.
 export function requireOrg(userId: string, orgId: string, min: Role = "viewer") {
-  const row = get<{ role: Role; tier: Tier; name_sealed: string }>(
-    "SELECT m.role, o.tier, o.name_sealed FROM memberships m JOIN orgs o ON o.id = m.org_id WHERE m.org_id = $o AND m.user_id = $u",
+  const row = get<TierRow & { role: Role; name_sealed: string }>(
+    `SELECT m.role, ${TIER_COLUMNS}, o.name_sealed FROM memberships m JOIN orgs o ON o.id = m.org_id
+     LEFT JOIN billing b ON b.org_id = o.id WHERE m.org_id = $o AND m.user_id = $u`,
     { o: orgId, u: userId },
   );
   if (!row) throw notFound();
   if (!atLeast(row.role, min)) throw forbidden();
-  return { orgId, role: row.role, tier: row.tier, name: orgName(orgId, row.name_sealed) };
+  return { orgId, role: row.role, ...effectiveTier(row), name: orgName(orgId, row.name_sealed) };
 }
 
 export function createOrg(userId: string, name: string) {

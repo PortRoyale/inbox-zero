@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AreaField, SelectField, TextField } from "@/components/plan/fields";
+import { useEffect, useRef, useState } from "react";
+import { SelectField, TextField } from "@/components/plan/fields";
+import { IncidentDetailsFields, type CaseFields } from "@/components/tools/IncidentDetails";
 import { SpecTable } from "@/components/structure";
 import { fromLocalInput, IncidentClock, toLocalInput, type TimeField } from "@/components/tools/IncidentClock";
 import { api } from "@/lib/client/api";
@@ -19,6 +20,9 @@ type IncidentData = {
   impact?: string;
   maliciousActor?: string;
   suspectedMalicious?: boolean;
+  manufacturer?: string;
+  memberState?: string;
+  contact?: string;
   rootCause?: string;
   measuresTaken?: string;
   userMeasures?: string;
@@ -26,6 +30,8 @@ type IncidentData = {
   sensitivity?: "low" | "medium" | "high";
   srpReference?: string;
 };
+// In an update, "" or null clears a stored value.
+type DataPatch = Partial<Omit<IncidentData, "suspectedMalicious">> & { suspectedMalicious?: boolean | null };
 type Incident = { id: string; kind: IncidentKind; times: IncidentTimes; data: IncidentData; createdAt: number; updatedAt: number };
 
 export function ProductIncidents({ productId, productName, canEdit }: { productId: string; productName: string; canEdit: boolean }) {
@@ -54,7 +60,7 @@ export function ProductIncidents({ productId, productName, canEdit }: { productI
     }
   };
 
-  const patch = async (body: { times?: Partial<Record<TimeField, number | null>>; data?: Partial<IncidentData> }) => {
+  const patch = async (body: { times?: Partial<Record<TimeField, number | null>>; data?: DataPatch }) => {
     if (!current) return;
     setError("");
     try {
@@ -66,10 +72,11 @@ export function ProductIncidents({ productId, productName, canEdit }: { productI
   };
 
   const p = plan.data?.plan;
+  const defaults: CaseFields = { productVersion: p?.product.version, manufacturer: p?.product.manufacturer, memberState: p?.updates.csirtCountry, contact: p?.vulns.contact };
   const now = Date.now();
 
   return (
-    <div className="stack">
+    <div className="stack-flow">
       <section className="stack-sm">
         <h2>Incident clock</h2>
         <p className="muted">
@@ -108,7 +115,12 @@ export function ProductIncidents({ productId, productName, canEdit }: { productI
             ]}
           />
         )}
-        {canEdit && (
+        <ErrorLine error={error || list.error} />
+      </section>
+
+      {canEdit && (
+        <section className="stack-sm" aria-labelledby="new-case-title">
+          <h3 id="new-case-title">{incidents.length ? "Open a new case" : "Open your first case"}</h3>
           <form className="inline-form incident-form" onSubmit={create}>
             <SelectField<IncidentKind>
               id="in-kind"
@@ -126,14 +138,14 @@ export function ProductIncidents({ productId, productName, canEdit }: { productI
               Start the clock
             </button></Act>
           </form>
-        )}
-        <ErrorLine error={error || list.error} />
-      </section>
-
+        </section>
+      )}
       {current && (
-        <section className="stack-sm" aria-labelledby="case-title">
+        <section className="stack-sm case-panel" aria-labelledby="case-title">
           <div className="row-between">
-            <h3 id="case-title">{current.data.title}</h3>
+            <h3 id="case-title">
+              <span className="label">Case</span> {current.data.title}
+            </h3>
             {canEdit && (
               <button type="button" className="btn" onClick={() => patch({ times: { closedAt: current.times.closedAt ? null : Date.now() } })}>
                 {current.times.closedAt ? "Reopen case" : "Close case"}
@@ -145,73 +157,63 @@ export function ProductIncidents({ productId, productName, canEdit }: { productI
             times={current.times}
             readOnly={!canEdit}
             onTime={(field, ms) => patch({ times: { [field]: ms } })}
-            draft={{
-              productName,
-              productVersion: current.data.productVersion ?? p?.product.version,
-              manufacturer: p?.product.manufacturer,
-              memberState: p?.updates.csirtCountry,
-              contact: p?.vulns.contact,
-              awareAt: current.times.awareAt,
-              ...current.data,
-            }}
+            draft={{ ...current.data, ...withPlanDefaults(current.data, defaults), productName, awareAt: current.times.awareAt }}
           />
-          {canEdit && <CaseDetails key={current.id} data={current.data} onSave={(data) => patch({ data })} />}
+          {canEdit && <CaseDetails key={current.id} kind={current.kind} data={withPlanDefaults(current.data, defaults)} onSave={(data) => patch({ data })} />}
         </section>
       )}
     </div>
   );
 }
 
-function CaseDetails({ data, onSave }: { data: IncidentData; onSave: (d: Partial<IncidentData>) => void }) {
+// Case values win; empty ones fall back to what the product's plan already says.
+function withPlanDefaults(data: IncidentData, defaults: CaseFields): IncidentData {
+  return {
+    ...data,
+    productVersion: data.productVersion || defaults.productVersion,
+    manufacturer: data.manufacturer || defaults.manufacturer,
+    memberState: data.memberState || defaults.memberState,
+    contact: data.contact || defaults.contact,
+  };
+}
+
+function CaseDetails({ kind, data, onSave }: { kind: IncidentKind; data: IncidentData; onSave: (d: DataPatch) => void }) {
   const [d, setD] = useState<IncidentData>(data);
-  const set = (k: keyof IncidentData) => (v: string) => setD((x) => ({ ...x, [k]: v }));
+  const [dirty, setDirty] = useState(false);
+  const ref = useRef<HTMLDetailsElement>(null);
+  // Open while the 24-hour warning still lacks something, and whenever a "case details" link is followed.
+  const missing = !data.summary || !data.manufacturer || !data.memberState || !data.marketStates?.length;
+  useEffect(() => {
+    const reveal = () => {
+      if (window.location.hash === "#case-details" && ref.current) ref.current.open = true;
+    };
+    reveal();
+    window.addEventListener("hashchange", reveal);
+    return () => window.removeEventListener("hashchange", reveal);
+  }, []);
+  const change = (patch: Partial<CaseFields>) => {
+    setD((x) => ({ ...x, ...patch }) as IncidentData);
+    setDirty(true);
+  };
+  const save = () => {
+    // Send every field, with "" or null for cleared ones, so clearing a value sticks.
+    const { title: _t, ...fields } = d;
+    onSave({ ...fields, suspectedMalicious: d.suspectedMalicious ?? null });
+    setDirty(false);
+  };
   return (
-    <details className="template case-details" open={!data.summary}>
+    <details ref={ref} className="template case-details" id="case-details" open={missing}>
       <summary>
         <span className="label">Case details for the reports</span>
         <span className="muted">Fill these once; every draft above uses them.</span>
       </summary>
-      <div className="form-grid">
-        <div className="span-2">
-          <AreaField id="cd-summary" label="Summary" rows={2} value={d.summary ?? ""} onChange={set("summary")} placeholder="What happened, in two sentences." />
-        </div>
-        <TextField id="cd-version" label="Affected versions" value={d.productVersion ?? ""} onChange={set("productVersion")} placeholder="2.0 to 2.4.1" />
-        <TextField id="cd-severity" label="Severity" value={d.severity ?? ""} onChange={set("severity")} placeholder="High, CVSS 8.1" />
-        <TextField id="cd-states" label="Member States where sold" value={(d.marketStates ?? []).join(", ")} onChange={(v) => setD((x) => ({ ...x, marketStates: v.split(",").map((s) => s.trim()).filter(Boolean) }))} placeholder="Germany, France" />
-        <SelectField<"" | "low" | "medium" | "high">
-          id="cd-sens"
-          label="Sensitivity of the information"
-          value={d.sensitivity ?? ""}
-          options={[
-            { value: "", label: "Choose" },
-            { value: "low", label: "Low" },
-            { value: "medium", label: "Medium" },
-            { value: "high", label: "High" },
-          ]}
-          onChange={(v) => setD((x) => ({ ...x, sensitivity: v || undefined }))}
-        />
-        <div className="span-2">
-          <AreaField id="cd-nature" label="Nature of the exploit or incident" rows={2} value={d.exploitNature ?? ""} onChange={set("exploitNature")} />
-        </div>
-        <div className="span-2">
-          <AreaField id="cd-impact" label="Impact" rows={2} value={d.impact ?? ""} onChange={set("impact")} />
-        </div>
-        <div className="span-2">
-          <AreaField id="cd-taken" label="Measures taken" rows={2} value={d.measuresTaken ?? ""} onChange={set("measuresTaken")} />
-        </div>
-        <div className="span-2">
-          <AreaField id="cd-users" label="What users can do" rows={2} value={d.userMeasures ?? ""} onChange={set("userMeasures")} />
-        </div>
-        <div className="span-2">
-          <AreaField id="cd-fix" label="Security update or corrective measure" rows={2} value={d.correctiveMeasure ?? ""} onChange={set("correctiveMeasure")} />
-        </div>
-        <TextField id="cd-root" label="Root cause (for the final report)" value={d.rootCause ?? ""} onChange={set("rootCause")} />
-        <TextField id="cd-actor" label="Malicious actor, if known" value={d.maliciousActor ?? ""} onChange={set("maliciousActor")} />
-        <TextField id="cd-srp" label="ENISA platform reference" value={d.srpReference ?? ""} onChange={set("srpReference")} />
+      <IncidentDetailsFields idPrefix="cd" kind={kind} value={d} onChange={change} askReference />
+      <div className="row">
+        <button type="button" className="btn btn-primary" onClick={save} disabled={!dirty}>
+          Save case details
+        </button>
+        {dirty && <span className="muted">Unsaved changes</span>}
       </div>
-      <button type="button" className="btn btn-primary" onClick={() => onSave(d)}>
-        Save case details
-      </button>
     </details>
   );
 }

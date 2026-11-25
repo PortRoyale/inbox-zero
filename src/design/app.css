@@ -190,7 +190,7 @@
 }
 
 .sev-tag {
-  width: 14ch;
+  width: 11ch;
 }
 
 .save-tag {
@@ -310,10 +310,11 @@
 .inline-form .field input,
 .inline-form .field select {
   width: 100%;
+  min-width: 0;
 }
 
 .incident-form {
-  grid-template-columns: minmax(12rem, 1.2fr) minmax(12rem, 1.6fr) minmax(12rem, 1fr) auto;
+  grid-template-columns: minmax(12rem, 1.1fr) minmax(12rem, 1.4fr) minmax(16rem, 1.1fr) auto;
 }
 
 .upload-form {
@@ -565,6 +566,29 @@
   margin-block: var(--s-4);
 }
 
+/* The open incident case: ruled off from the case list and the new-case form above it. */
+.case-panel {
+  padding-top: var(--s-6);
+  border-top: var(--lw-wide) solid var(--ink);
+}
+.case-panel h3 .label {
+  display: block;
+  margin-bottom: var(--s-1);
+}
+
+/* Group headings in the incident case form: a ruled band across both columns, numbered by report. */
+.case-fields .case-group {
+  margin: var(--s-3) 0 calc(var(--s-5) * -0.5);
+  padding-top: var(--s-4);
+  border-top: var(--lw-thin) solid var(--ink);
+  font-size: var(--t-3);
+}
+.case-fields .case-group:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
 @media (max-width: 48rem) {
   .app-masthead .wrap {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -663,4 +687,28 @@
 .masthead-signin:hover {
   color: var(--ink) !important;
   text-decoration: underline;
+}
+
+/* File pickers (SBOM upload): the native button styled as one of ours, the file name in code type. */
+input[type="file"] {
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  cursor: pointer;
+}
+input[type="file"]::file-selector-button {
+  margin-right: var(--s-4);
+  min-height: 2.25rem;
+  padding: 0 var(--s-5);
+  border: var(--lw-wide) solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+input[type="file"]:hover::file-selector-button {
+  background: var(--ink);
+  color: var(--paper);
 }

@@ -27,31 +27,39 @@ export function SiteFooter() {
             <dt>Tools</dt>
             <dd>
               <ul className="foot-links">
-                <li>
-                  <a href={paths.plan}>Plan builder</a>
-                </li>
-                <li>
-                  <a href={paths.assessment}>Readiness check</a>
-                </li>
-                <li>
-                  <a href={paths.releaseGate}>Release gate</a>
-                </li>
-                <li>
-                  <a href={paths.brief}>Sector briefs</a>
-                </li>
-                <li>
-                  <a href={paths.guides}>Guides</a>
-                </li>
-                <li>
-                  <a href={paths.pricing}>Pricing</a>
-                </li>
+                {[
+                  [paths.plan, "Plan builder"],
+                  [paths.assessment, "Readiness check"],
+                  [paths.releaseGate, "Release gate"],
+                  [paths.sbomCheck, "SBOM check"],
+                  [paths.incidentClock, "Incident clock"],
+                  [paths.brief, "Sector briefs"],
+                  [paths.guides, "Guides"],
+                  [paths.tools, "All tools"],
+                ].map(([href, label]) => (
+                  <li key={label}>
+                    <a href={href}>{label}</a>
+                  </li>
+                ))}
               </ul>
             </dd>
           </div>
           <div>
-            <dt>Contact</dt>
+            <dt>Company</dt>
             <dd>
-              <a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a>
+              <ul className="foot-links foot-links-one">
+                {[
+                  [paths.pricing, "Pricing"],
+                  [paths.security, "Trust centre"],
+                  [paths.terms, "Terms"],
+                  [paths.privacy, "Privacy"],
+                  [`mailto:${site.contactEmail}`, site.contactEmail],
+                ].map(([href, label]) => (
+                  <li key={label}>
+                    <a href={href}>{label}</a>
+                  </li>
+                ))}
+              </ul>
             </dd>
           </div>
           <div className="foot-note">

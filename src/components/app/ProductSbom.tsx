@@ -84,7 +84,7 @@ export function ProductSbom({ productId, canEdit, canDelete }: { productId: stri
   };
 
   return (
-    <div className="stack">
+    <div className="stack-flow">
       <section className="stack-sm">
         <h2>SBOM watch</h2>
         <p className="muted">

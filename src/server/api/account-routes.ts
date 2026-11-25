@@ -180,7 +180,7 @@ export const accountRoutes = [
   },
   ({ user, params }) => {
     const org = orgs.requireOrg(user.id, params.orgId);
-    return { id: org.orgId, name: org.name, tier: org.tier, role: org.role, limits: orgs.TIERS[org.tier] };
+    return { id: org.orgId, name: org.name, tier: org.tier, trial: org.trial, role: org.role, limits: orgs.TIERS[org.tier] };
   }),
   route({
     method: "GET",

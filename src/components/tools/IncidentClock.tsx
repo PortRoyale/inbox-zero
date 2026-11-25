@@ -59,7 +59,7 @@ export function IncidentClock({
   if (kind === "vulnerability") rows.splice(2, 0, { id: "fix", label: "Fix or mitigation available" });
 
   return (
-    <div className="stack">
+    <div className="stack-flow">
       <div className={`clock-banner ${next ? STATE_TONE[next.state] : "is-good"}`} role="status" aria-live="polite">
         <p className="label">{next ? `Next: ${next.label}` : "No open deadline"}</p>
         <p className="clock-figure code">{next && next.remainingMs !== null ? formatRemaining(next.remainingMs) : "All due reports sent"}</p>
@@ -140,8 +140,15 @@ export function IncidentClock({
           </div>
         </div>
         <p className="muted">
-          {report.title}. {gaps ? `${gaps} required field${gaps > 1 ? "s" : ""} still to complete.` : "All required fields are filled in."} Submit CSIRT reports through
-          ENISA&apos;s Single Reporting Platform.
+          {report.title}.{" "}
+          {gaps ? (
+            <>
+              {gaps} required field{gaps > 1 ? "s" : ""} still to complete{readOnly ? "" : <> in <a href="#case-details">the case details</a></>}.
+            </>
+          ) : (
+            "All required fields are filled in."
+          )}{" "}
+          Submit CSIRT reports through ENISA&apos;s Single Reporting Platform.
         </p>
         <SpecTable
           rows={report.fields}

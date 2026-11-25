@@ -83,8 +83,39 @@ describe("sbomQuality", () => {
     expect(byId.identifiers.passed).toBe(true);
     expect(byId.supplier.passed).toBe(false);
     expect(byId.supplier.detail).toBe("1 of 5 components have a supplier");
+    expect(byId.supplier.level).toBe("partial");
+    expect(byId.versions.level).toBe("pass");
+    // No dependency graph in this file: listing components alone does not meet the NTIA element.
+    expect(byId.dependencies).toMatchObject({ passed: false, level: "gap", detail: "Components are listed, but not how they depend on each other" });
     expect(q.score).toBeGreaterThan(50);
     expect(q.score).toBeLessThan(100);
+  });
+
+  it("counts dependency relationships in CycloneDX and SPDX", () => {
+    const withDeps = { ...cdx, dependencies: [{ ref: "root", dependsOn: ["a", "b"] }, { ref: "a", dependsOn: ["c"] }, { ref: "c" }] };
+    const c = parseSbom(JSON.stringify(withDeps));
+    expect(c.dependencyLinks).toBe(3);
+    const dep = sbomQuality(c).checks.find((x) => x.id === "dependencies");
+    expect(dep).toMatchObject({ passed: true, level: "pass", detail: "3 dependency relationships recorded" });
+    const s = parseSbom(
+      JSON.stringify({
+        ...spdx,
+        relationships: [
+          { spdxElementId: "SPDXRef-DOCUMENT", relationshipType: "DESCRIBES", relatedSpdxElement: "SPDXRef-root" },
+          { spdxElementId: "SPDXRef-root", relationshipType: "DEPENDS_ON", relatedSpdxElement: "SPDXRef-a" },
+          { spdxElementId: "SPDXRef-root", relationshipType: "CONTAINS", relatedSpdxElement: "SPDXRef-b" },
+          { spdxElementId: "SPDXRef-b", relationshipType: "BUILD_DEPENDENCY_OF", relatedSpdxElement: "SPDXRef-root" },
+        ],
+      }),
+    );
+    expect(s.dependencyLinks).toBe(3);
+  });
+
+  it("gives partial credit for partial coverage", () => {
+    const none = parseSbom(JSON.stringify({ ...cdx, components: cdx.components.map(({ supplier: _s, ...c }) => c) }));
+    const some = parseSbom(JSON.stringify(cdx));
+    expect(sbomQuality(some).score).toBeGreaterThan(sbomQuality(none).score);
+    expect(sbomQuality(none).checks.find((x) => x.id === "supplier")?.level).toBe("gap");
   });
 });
 

@@ -17,13 +17,18 @@ export type IncidentData = {
   severity?: string;
   impact?: string;
   maliciousActor?: string;
-  suspectedMalicious?: boolean;
+  // null only in an update, where it clears the stored answer.
+  suspectedMalicious?: boolean | null;
   rootCause?: string;
   measuresTaken?: string;
   userMeasures?: string;
   correctiveMeasure?: string;
   sensitivity?: "low" | "medium" | "high";
   srpReference?: string;
+  // Case-level overrides; when empty, report drafts use the product's plan.
+  manufacturer?: string;
+  memberState?: string;
+  contact?: string;
 };
 
 export const TIME_FIELDS = ["earlyWarningAt", "notificationAt", "fixAvailableAt", "finalReportAt", "usersInformedAt", "closedAt"] as const;
@@ -102,7 +107,9 @@ export function updateIncident(userId: string, productId: string, incidentId: st
     params[f] = v;
   }
   if (patch.data) {
-    const merged = { ...open<IncidentData>(row.data_sealed, `incident:${incidentId}`), ...patch.data };
+    const merged: Record<string, unknown> = { ...open<IncidentData>(row.data_sealed, `incident:${incidentId}`), ...patch.data };
+    // An empty value or null clears the field, so the draft falls back to the plan's value again.
+    for (const [k, val] of Object.entries(merged)) if (val === null || val === "") delete merged[k];
     sets.push("data_sealed = $d");
     params.d = seal(merged, `incident:${incidentId}`);
   }

@@ -5,7 +5,7 @@ import { industries } from "@/content/industries";
 import { SelectField, TextField } from "@/components/plan/fields";
 import { SpecTable } from "@/components/structure";
 import { api } from "@/lib/client/api";
-import { Act, can, ErrorLine, PageTitle, useApp, useLoad, when } from "@/components/app/AppShell";
+import { Act, can, ErrorLine, PageTitle, planLabel, useApp, useLoad, when } from "@/components/app/AppShell";
 
 type ProductSummary = {
   id: string;
@@ -49,7 +49,7 @@ export function Dashboard() {
 
   return (
     <>
-      <PageTitle label="Workspace" cells={[org.name, `${org.tier} plan`, org.role]} title="Products" lead="Every product has its own security plan, release records, SBOM watch and incident clock." />
+      <PageTitle label="Workspace" cells={[org.name, planLabel(org), org.role]} title="Products" lead="Every product has its own security plan, release records, SBOM watch and incident clock." />
 
       {b && b.state !== "active" && (
         <section className={`sheet billing-banner is-${b.state}`} role="status">
@@ -110,7 +110,15 @@ export function Dashboard() {
                     "Not started"
                   ),
               },
-              { key: "gaps", label: "Gaps", width: "6rem", code: true, render: (p) => p.summary?.gaps ?? 0 },
+              {
+                key: "gaps",
+                label: "Plan gaps",
+                width: "9rem",
+                render: (p) => {
+                  const g = p.summary?.gaps ?? 0;
+                  return <span className={`count-tag ${g ? "is-bad" : "is-good"}`}>{g ? `${g} open` : "None"}</span>;
+                },
+              },
               {
                 key: "vulns",
                 label: "Open vulns",

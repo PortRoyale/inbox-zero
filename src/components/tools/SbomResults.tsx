@@ -2,7 +2,9 @@
 
 import { SpecTable } from "@/components/structure";
 
-export type QualityCheck = { id: string; label: string; passed: boolean; detail: string };
+// level is absent on SBOMs stored before partial results existed; fall back to passed.
+export type QualityCheck = { id: string; label: string; passed: boolean; level?: "pass" | "partial" | "gap"; detail: string };
+const LEVEL = { pass: { cls: "is-good", text: "Pass" }, partial: { cls: "is-partial", text: "Partly" }, gap: { cls: "is-bad", text: "Gap" } } as const;
 export type FindingView = {
   id?: string;
   vulnId: string;
@@ -41,7 +43,15 @@ export function QualityTable({ score, checks }: { score: number; checks: Quality
         rowKey={(c) => c.id}
         cols={[
           { key: "check", label: "Check", head: true, width: "34%", render: (c) => c.label },
-          { key: "result", label: "Result", width: "9rem", render: (c) => <span className={`count-tag ${c.passed ? "is-good" : "is-bad"}`}>{c.passed ? "Pass" : "Gap"}</span> },
+          {
+            key: "result",
+            label: "Result",
+            width: "9rem",
+            render: (c) => {
+              const l = LEVEL[c.level ?? (c.passed ? "pass" : "gap")];
+              return <span className={`count-tag ${l.cls}`}>{l.text}</span>;
+            },
+          },
           { key: "detail", label: "Detail", render: (c) => c.detail },
         ]}
       />
@@ -71,7 +81,8 @@ export function FindingsTable({ findings, onStatus }: { findings: FindingView[];
       rows={findings}
       rowKey={(f) => `${f.vulnId}|${f.component}|${f.version}`}
       cols={[
-        { key: "sev", label: "Severity", width: "8.5rem", render: (f) => <span className={`sev-tag is-${f.severity}`}>{f.score !== null ? `${f.severity} ${f.score.toFixed(1)}` : f.severity}</span> },
+        { key: "sev", label: "Severity", width: "8.5rem", render: (f) => <span className={`sev-tag is-${f.severity}`}>{f.severity}</span> },
+        { key: "cvss", label: "CVSS", width: "5rem", code: true, render: (f) => (f.score !== null ? f.score.toFixed(1) : "None") },
         {
           key: "vuln",
           label: "Vulnerability",

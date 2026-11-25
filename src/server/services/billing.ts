@@ -5,7 +5,7 @@ import { safeEqual } from "@/server/crypto/secrets";
 import { all, get, now, run, tx } from "@/server/db";
 import { HttpError, badRequest } from "@/server/errors";
 import { audit, sendMail } from "@/server/platform";
-import { requireOrg, type Tier } from "@/server/services/orgs";
+import { requireOrg, TIERS, TRIAL_DAYS, type Tier } from "@/server/services/orgs";
 
 // Billing with Finix (preferred) or Stripe, over plain HTTPS (no SDKs).
 // Finix: an annual prepayment through a hosted Checkout Form; the team is paid up for one year.
@@ -13,7 +13,6 @@ import { requireOrg, type Tier } from "@/server/services/orgs";
 // Entitlement: an active paid period, or a 14-day trial from team creation. Lapsed teams are read-only.
 
 const DAY = 86_400_000;
-export const TRIAL_DAYS = 14;
 const YEAR_MS = 365 * DAY;
 const SIGNATURE_TOLERANCE_S = 300;
 
@@ -48,7 +47,8 @@ export function entitlement(orgId: string): Entitlement {
   if (b && (b.status === "active" || b.status === "past_due") && (b.paid_until === null || b.paid_until > t)) {
     return { state: b.status === "past_due" ? "past_due" : "active", tier: b.tier, trialEndsAt, paidUntil: b.paid_until, provider: b.provider, canWrite: true };
   }
-  if (t < trialEndsAt) return { state: "trial", tier: org.tier, trialEndsAt, paidUntil: null, provider: b?.provider ?? null, canWrite: true };
+  // The trial includes every Team feature (see effectiveTier in orgs.ts).
+  if (t < trialEndsAt) return { state: "trial", tier: "team", trialEndsAt, paidUntil: null, provider: b?.provider ?? null, canWrite: true };
   return { state: "lapsed", tier: org.tier, trialEndsAt, paidUntil: b?.paid_until ?? null, provider: b?.provider ?? null, canWrite: false };
 }
 
@@ -140,8 +140,24 @@ async function stripeRequest(c: Extract<BillingConfig, { provider: "stripe" }>, 
 
 const TIER_LABEL: Record<Tier, string> = { starter: "Readyline Starter", team: "Readyline Team" };
 
+// The trial includes Team features, so a team can outgrow Starter before it pays. Say exactly what
+// to change instead of charging for a plan that would leave part of the workspace over its limits.
+function assertFitsStarter(orgId: string) {
+  const limits = TIERS.starter;
+  const products = get<{ n: number }>("SELECT count(*) AS n FROM products WHERE org_id = $o AND archived_at IS NULL", { o: orgId })!.n;
+  const people = get<{ n: number }>("SELECT count(*) AS n FROM memberships WHERE org_id = $o", { o: orgId })!.n;
+  const invites = get<{ n: number }>("SELECT count(*) AS n FROM invites WHERE org_id = $o AND accepted_at IS NULL AND expires_at > $t", { o: orgId, t: now() })!.n;
+  const teamRoles = get<{ n: number }>("SELECT count(*) AS n FROM memberships WHERE org_id = $o AND role IN ('admin', 'approver')", { o: orgId })!.n;
+  const fixes: string[] = [];
+  if (products > limits.products) fixes.push(`archive ${products - limits.products} of your ${products} products`);
+  if (people + invites > limits.members) fixes.push(`bring the team to ${limits.members} people including open invitations (now ${people + invites})`);
+  if (teamRoles > 0) fixes.push(`change ${teamRoles} admin or approver role${teamRoles > 1 ? "s" : ""} to editor`);
+  if (fixes.length) throw badRequest(`Starter covers ${limits.products} product and ${limits.members} people. To choose it, first ${fixes.join(", ")}. Or choose Team.`);
+}
+
 export async function startCheckout(user: { id: string; email: string; name: string }, orgId: string, tier: Tier) {
   const org = requireOrg(user.id, orgId, "owner");
+  if (tier === "starter") assertFitsStarter(orgId);
   const c = config().billing;
   const app = config().appUrl;
   const success = `${app}/app/account/?billing=success&org=${orgId}`;

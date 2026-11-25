@@ -292,6 +292,14 @@ summary {
   padding-block: var(--s-7) var(--s-9);
 }
 
+/* The same rhythm inside a panel or component, without the page-level padding. */
+.stack-flow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-7);
+  min-width: 0;
+}
+
 /* ---------- Sheet: a drawing sheet with a frame and zone ticks ---------- */
 
 .sheet {
