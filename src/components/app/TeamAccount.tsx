@@ -532,8 +532,17 @@ export function AdminPage() {
                 ),
               },
               { key: "p", label: "Plan", width: "8rem", code: true, render: (l) => l.plan || "Not sure" },
-              { key: "m", label: "Makes", width: "12rem", render: (l) => l.makes ?? "" },
-              { key: "n", label: "Notes", render: (l) => l.notes ?? "" },
+              { key: "m", label: "Makes", width: "12rem", render: (l) => l.makes || <span className="muted">Not given</span> },
+              {
+                key: "n",
+                label: "Notes",
+                render: (l) => (
+                  <>
+                    {l.notes || <span className="muted">No notes</span>}
+                    {l.sellWhen && <span className="cell-body muted">Sells in the EU: {l.sellWhen}</span>}
+                  </>
+                ),
+              },
               { key: "d", label: "Received", width: "9rem", code: true, render: (l) => when(l.createdAt).slice(0, 11) },
               {
                 key: "x",

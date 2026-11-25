@@ -115,7 +115,7 @@ export function SignupForm() {
   return (
     <AuthCard
       title="Create your account"
-      lead="Free to start. Your data is encrypted at rest with post-quantum key wrapping."
+      lead="A 14-day trial with every Team feature, no card needed. Your data is encrypted at rest with post-quantum key wrapping."
       foot={
         <ul className="auth-links">
           <li>
