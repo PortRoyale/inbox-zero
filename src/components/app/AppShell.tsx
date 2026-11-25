@@ -92,6 +92,15 @@ export function AppShell({ current, children }: { current: "products" | "team" |
       <header className="masthead app-masthead">
         <div className="wrap">
           <a className="wordmark" href="/" aria-label={`${site.name} home`}>
+            <span aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 20 20" className="logo-mark">
+                <path d="M10 2.6 A7.4 7.4 0 0 1 17.4 10" className="mark-q1" fill="none" strokeWidth="2.6" />
+                <path d="M17.4 10 A7.4 7.4 0 0 1 10 17.4" className="mark-q2" fill="none" strokeWidth="2.6" />
+                <path d="M10 17.4 A7.4 7.4 0 0 1 2.6 10" className="mark-q3" fill="none" strokeWidth="2.6" />
+                <path d="M2.6 10 A7.4 7.4 0 0 1 10 2.6" className="mark-q4" fill="none" strokeWidth="2.6" />
+                <path d="M10 0v20M0 10h20" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
+            </span>
             <span>{site.name.toUpperCase()}</span>
           </a>
           <nav aria-label="Workspace">
@@ -173,6 +182,18 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[]) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick]);
   return { data, error, reload: () => setTick((t) => t + 1), setData };
+}
+
+/** A form button that sits on the same line as the inputs beside it (label, control and hint rows). */
+export function Act({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="field form-action">
+      <span className="label" aria-hidden="true">
+        &nbsp;
+      </span>
+      {children}
+    </div>
+  );
 }
 
 export function ErrorLine({ error }: { error: string }) {

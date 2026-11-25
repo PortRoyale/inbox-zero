@@ -89,8 +89,15 @@ export function billingStatus(userId: string, orgId: string) {
   const org = requireOrg(userId, orgId, "viewer");
   const b = get<BillingRow>("SELECT * FROM billing WHERE org_id = $id", { id: orgId });
   const provider = config().billing.provider;
+  const c = config().billing;
+  const money = (amount: number, currency: string) => new Intl.NumberFormat("en-GB", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
+  const prices =
+    c.provider === "finix"
+      ? { starter: `${money(c.prices.starter / 100, c.currency)}/year`, team: `${money(c.prices.team / 100, c.currency)}/year` }
+      : { starter: "€149/month", team: "€499/month" };
   return {
     ...entitlement(orgId),
+    prices,
     status: b?.status ?? null,
     checkoutAvailable: provider !== "none",
     checkoutProvider: provider,

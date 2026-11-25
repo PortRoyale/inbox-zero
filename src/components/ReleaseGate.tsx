@@ -73,9 +73,13 @@ const gateChoices: RunChoice<YesNo>[] = [
 
 const STORAGE_KEY = "release-gate-v2";
 
-export function ReleaseGate() {
+// Embedded: inside a product workspace, the record is saved to the product on the server.
+export type GateEmbed = { productId: string; productName: string; onSave: (r: { versionLabel: string; ticket: string; answers: GateAnswers; notes: Partial<Record<QuestionId, string>> }) => Promise<void> };
+
+export function ReleaseGate({ embedded }: { embedded?: GateEmbed } = {}) {
   const today = useToday();
-  const [release, setRelease] = useState({ product: "", version: "", ticket: "" });
+  const [release, setRelease] = useState({ product: embedded?.productName ?? "", version: "", ticket: "" });
+  const [saveState, setSaveState] = useState<{ kind: "idle" | "saving" | "saved" | "error"; message?: string }>({ kind: "idle" });
   const [answers, setAnswers] = useState<GateAnswers>({});
   const [notes, setNotes] = useState<Partial<Record<QuestionId, string>>>({});
   const [runKey, setRunKey] = useState(0);
@@ -184,8 +188,39 @@ export function ReleaseGate() {
         sensible defaults; adjust them to your own policy.
       </p>
       <div className="row">
-        <ConfirmButton label="Start a new release" confirmLabel="Clear everything" onConfirm={clear} />
+        {embedded && result.complete && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={saveState.kind === "saving" || saveState.kind === "saved" || !release.version.trim()}
+            onClick={async () => {
+              setSaveState({ kind: "saving" });
+              try {
+                await embedded.onSave({ versionLabel: release.version.trim(), ticket: release.ticket.trim(), answers, notes });
+                setSaveState({ kind: "saved" });
+              } catch (e) {
+                setSaveState({ kind: "error", message: (e as Error).message });
+              }
+            }}
+          >
+            {saveState.kind === "saved" ? "Saved to the product" : saveState.kind === "saving" ? "Saving…" : "Save release record"}
+          </button>
+        )}
+        <ConfirmButton
+          label="Start a new release"
+          confirmLabel="Clear everything"
+          onConfirm={() => {
+            clear();
+            setSaveState({ kind: "idle" });
+          }}
+        />
       </div>
+      {embedded && !release.version.trim() && result.complete && <p className="note-line">Add the version on the start screen to save this record.</p>}
+      {saveState.kind === "error" && (
+        <p className="form-error" role="alert">
+          {saveState.message}
+        </p>
+      )}
     </div>
   );
 
@@ -232,23 +267,13 @@ export function ReleaseGate() {
 
   const hits = yesTriggers.length;
 
-  return (
-    <div className="wrap stack" data-tool="gate">
-      <PageHero
-        id="gate-title"
-        tool="gate"
-        motif="chip"
-        seed={23}
-        label="Free tool"
-        cells={["Change control", "Annex I Pt II(3)"]}
-        title="Release security gate"
-        lead="Test depth should follow what changed, not the version label. Sixteen yes-or-no questions, about two minutes, one release record."
-      />
+  const run = (
       <Walkthrough<YesNo>
         key={runKey}
         id="gate-run"
+        compact={!!embedded}
         name="Release gate"
-        storageKey={STORAGE_KEY}
+        storageKey={embedded ? `${STORAGE_KEY}:${embedded.productId}` : STORAGE_KEY}
         levels={levels}
         choices={gateChoices}
         answers={answers}
@@ -307,6 +332,22 @@ export function ReleaseGate() {
           </div>
         }
       />
+  );
+
+  if (embedded) return <div data-tool="gate">{run}</div>;
+  return (
+    <div className="wrap stack" data-tool="gate">
+      <PageHero
+        id="gate-title"
+        tool="gate"
+        motif="chip"
+        seed={23}
+        label="Free tool"
+        cells={["Change control", "Annex I Pt II(3)"]}
+        title="Release security gate"
+        lead="Test depth should follow what changed, not the version label. Sixteen yes-or-no questions, about two minutes, one release record."
+      />
+      {run}
     </div>
   );
 }

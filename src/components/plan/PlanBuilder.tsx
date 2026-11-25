@@ -308,7 +308,7 @@ export function PlanBuilder({ cloud }: { cloud?: CloudPlan } = {}) {
   );
 
   return (
-    <div className="wrap stack" data-tool="plan">
+    <div className={cloud ? "stack" : "wrap stack"} data-tool="plan">
       {cloud ? (
         <section className="sheet plan-cloud-bar" aria-label="Plan status">
           {strip}

@@ -1,0 +1,645 @@
+/* Signed-in app and auth screens. Same rules as the site: structured grids, shared edges,
+   fixed-size badge families, one colour language (green done, yellow partly, red open). */
+
+/* ---------- Auth ---------- */
+
+.auth-main {
+  display: grid;
+  place-items: start center;
+  padding-block: var(--s-8);
+}
+
+.auth-card {
+  width: min(100%, 30rem);
+  display: grid;
+  gap: var(--s-5);
+  padding: var(--s-7) var(--s-6);
+  border-top: 6px solid var(--brand-blue);
+}
+
+.auth-head {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.auth-head h1 {
+  margin: 0;
+  font-size: var(--t-6);
+}
+
+.auth-head p {
+  margin: 0;
+}
+
+.auth-form {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.auth-form .field input {
+  width: 100%;
+}
+
+.auth-form .btn {
+  width: 100%;
+}
+
+.auth-foot {
+  border-top: var(--lw-thin) solid var(--rule);
+  padding-top: var(--s-4);
+}
+
+.auth-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+
+.form-error {
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border-left: 4px solid var(--redline);
+  background: var(--redline-wash);
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+
+/* ---------- App shell ---------- */
+
+.app-masthead .wrap {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-6);
+}
+
+.app-masthead nav {
+  display: flex;
+  gap: var(--s-6);
+  overflow-x: auto;
+}
+
+.app-who {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.app-org {
+  font-family: var(--font-code);
+  font-size: var(--t-2);
+  color: var(--ink-2);
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.org-switch select {
+  min-height: 2.5rem;
+  padding: 0 var(--s-3);
+  border: var(--lw-thin) solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-2);
+}
+
+.app-main {
+  padding-block: var(--s-6) var(--s-8);
+}
+
+.app-title {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--s-5);
+  padding: var(--s-6);
+  border-top: 6px solid var(--tool, var(--brand-blue));
+}
+
+.app-title h1 {
+  margin: var(--s-3) 0 0;
+  font-size: clamp(var(--t-6), 4vw, var(--t-7));
+}
+
+.app-title .lead {
+  margin: var(--s-3) 0 0;
+}
+
+.app-title .fcf {
+  margin: 0;
+}
+
+/* ---------- Banners ---------- */
+
+.billing-banner,
+.conflict-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-4) var(--s-5);
+  border-left: 6px solid var(--brand-yellow);
+}
+
+.billing-banner p,
+.conflict-banner p {
+  margin: 0;
+}
+
+.billing-banner.is-past_due,
+.billing-banner.is-lapsed,
+.conflict-banner {
+  border-left-color: var(--redline);
+}
+
+.conflict-banner {
+  margin-top: var(--s-4);
+  background: var(--redline-wash);
+  border: var(--lw-thin) solid var(--redline);
+  border-left-width: 6px;
+}
+
+/* ---------- Count and severity badges: fixed sizes per family ---------- */
+
+.count-tag,
+.sev-tag,
+.save-tag {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  height: 1.75rem;
+  padding: 0 var(--s-2);
+  border: var(--lw-thin) solid var(--ink-3);
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+
+.count-tag {
+  width: 13ch;
+}
+
+.sev-tag {
+  width: 14ch;
+}
+
+.save-tag {
+  width: 11.5ch;
+}
+
+.count-tag.is-good,
+.save-tag.is-saved {
+  background: var(--brand-green);
+  border-color: var(--brand-green);
+  color: var(--on-brand);
+}
+
+.count-tag.is-partial,
+.save-tag.is-dirty,
+.save-tag.is-saving {
+  background: color-mix(in srgb, var(--brand-yellow) 35%, var(--paper));
+  border-color: var(--brand-yellow);
+  color: var(--ink);
+}
+
+.count-tag.is-bad,
+.save-tag.is-error,
+.save-tag.is-conflict {
+  background: var(--redline);
+  border-color: var(--redline);
+  color: var(--paper);
+}
+
+.count-tag.is-neutral,
+.save-tag.is-view {
+  border-style: dashed;
+}
+
+.sev-tag.is-critical {
+  background: var(--redline);
+  border-color: var(--redline);
+  color: var(--paper);
+}
+
+.sev-tag.is-high {
+  border-color: var(--redline);
+  color: var(--redline);
+  box-shadow: inset 0 0 0 1px var(--redline);
+}
+
+.sev-tag.is-medium {
+  background: color-mix(in srgb, var(--brand-yellow) 35%, var(--paper));
+  border-color: var(--brand-yellow);
+  color: var(--ink);
+}
+
+.sev-tag.is-low {
+  border-color: var(--ink-3);
+}
+
+/* Severity counts strip: five equal cells. */
+.sev-counts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: var(--lw-wide) solid var(--ink);
+}
+
+.sev-counts li {
+  --c: var(--ink-3);
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-3) var(--s-4);
+  border-top: 6px solid var(--c);
+}
+
+.sev-counts li + li {
+  border-left: var(--lw-thin) solid var(--ink);
+}
+
+.sev-counts .is-critical,
+.sev-counts .is-high {
+  --c: var(--redline);
+}
+
+.sev-counts .is-medium {
+  --c: var(--brand-yellow);
+}
+
+.sev-n {
+  font-size: var(--t-5);
+  font-weight: 700;
+}
+
+.sev-l {
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* ---------- Forms in rows ---------- */
+
+.inline-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  align-items: end;
+  gap: var(--s-4);
+}
+
+.inline-form > .btn,
+.inline-form > .row,
+.inline-form > .copy {
+  align-self: end;
+  min-height: 2.75rem;
+}
+
+.inline-form .field input,
+.inline-form .field select {
+  width: 100%;
+}
+
+.incident-form {
+  grid-template-columns: minmax(12rem, 1.2fr) minmax(12rem, 1.6fr) minmax(12rem, 1fr) auto;
+}
+
+.upload-form {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(14rem, 1.6fr) auto;
+  align-items: end;
+  gap: var(--s-4);
+}
+
+.cell-select {
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0 var(--s-2);
+  border: var(--lw-thin) solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-2);
+}
+
+.mini-gauge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4ch;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.score-strip {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr) 5ch;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.score-strip p {
+  margin: 0;
+}
+
+.score-figure {
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ---------- Workspace tabs: one row of equal cells ---------- */
+
+.ws-tabs {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.ws-tablist {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: var(--lw-wide) solid var(--ink);
+  background: var(--paper);
+}
+
+.ws-tab {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  padding: var(--s-3) var(--s-4);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-2);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ws-tab + .ws-tab {
+  border-left: var(--lw-thin) solid var(--ink);
+}
+
+.ws-tab:hover {
+  background: color-mix(in srgb, var(--brand-blue) 8%, var(--paper));
+}
+
+.ws-tab[aria-selected="true"] {
+  background: var(--brand-blue-soft);
+}
+
+.ws-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 4px;
+  background: var(--brand-blue);
+}
+
+.ws-tab-no {
+  font-size: var(--t-1);
+  color: var(--ink-3);
+}
+
+.ws-panel.sheet {
+  padding: var(--s-6);
+}
+
+@media (max-width: 64rem) {
+  .ws-tablist {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .ws-tab:nth-child(5) {
+    border-left: 0;
+  }
+  .ws-tab:nth-child(n + 5) {
+    border-top: var(--lw-thin) solid var(--ink);
+  }
+}
+
+@media (max-width: 40rem) {
+  .ws-tablist {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ws-tab:nth-child(odd) {
+    border-left: 0;
+  }
+  .ws-tab:nth-child(n + 3) {
+    border-top: var(--lw-thin) solid var(--ink);
+  }
+}
+
+/* ---------- Incident clock ---------- */
+
+.clock-banner {
+  --c: var(--brand-green);
+  display: grid;
+  grid-template-columns: minmax(10rem, auto) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--s-5);
+  padding: var(--s-5);
+  border: var(--lw-wide) solid var(--ink);
+  border-left: 10px solid var(--c);
+  background: color-mix(in srgb, var(--c) 10%, var(--paper));
+}
+
+.clock-banner.is-partial {
+  --c: var(--brand-yellow);
+}
+
+.clock-banner.is-bad {
+  --c: var(--redline);
+}
+
+.clock-banner p {
+  margin: 0;
+}
+
+.clock-figure {
+  font-size: var(--t-6);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.clock-sub {
+  font-family: var(--font-code);
+  font-size: var(--t-1);
+  color: var(--ink-2);
+}
+
+.done-cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-2);
+  align-items: center;
+}
+
+.done-cell input {
+  min-width: 0;
+  min-height: 2.25rem;
+  border: var(--lw-thin) solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-1);
+  padding: 0 var(--s-2);
+}
+
+.spec tbody tr.is-gap > * {
+  background: color-mix(in srgb, var(--redline) 6%, var(--paper));
+}
+
+.gap-text {
+  color: var(--redline);
+  font-weight: 600;
+}
+
+/* ---------- Plans and billing ---------- */
+
+.plan-pick {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: var(--lw-wide) solid var(--ink);
+}
+
+.plan-cell {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--s-3);
+  padding: var(--s-5);
+}
+
+.plan-cell + .plan-cell {
+  border-left: var(--lw-thin) solid var(--ink);
+}
+
+.plan-cell p {
+  margin: 0;
+}
+
+.plan-cell.is-current {
+  background: color-mix(in srgb, var(--brand-green) 10%, var(--paper));
+  box-shadow: inset 0 6px 0 var(--brand-green);
+}
+
+.plan-price {
+  font-size: var(--t-5);
+  font-weight: 700;
+}
+
+.plan-cell .btn {
+  width: 100%;
+}
+
+.danger-zone {
+  border-top: 6px solid var(--redline);
+}
+
+.signed-box {
+  padding: var(--s-4) var(--s-5);
+  border: var(--lw-thin) solid var(--brand-green);
+  border-left: 6px solid var(--brand-green);
+  background: color-mix(in srgb, var(--brand-green) 8%, var(--paper));
+}
+
+.signed-box p {
+  margin: 0 0 var(--s-3);
+}
+
+.plan-cloud-bar {
+  padding: var(--s-4);
+}
+
+.case-details .form-grid {
+  margin-block: var(--s-4);
+}
+
+@media (max-width: 48rem) {
+  .app-masthead .wrap {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .app-masthead nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .app-title,
+  .billing-banner,
+  .conflict-banner,
+  .clock-banner,
+  .upload-form,
+  .incident-form,
+  .plan-pick {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .plan-cell + .plan-cell {
+    border-left: 0;
+    border-top: var(--lw-thin) solid var(--ink);
+  }
+  .sev-counts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .sev-counts li:nth-child(4) {
+    border-left: 0;
+  }
+  .sev-counts li:nth-child(n + 4) {
+    box-shadow: inset 0 1px 0 var(--ink);
+  }
+  .score-strip {
+    grid-template-columns: minmax(0, 1fr) 5ch;
+  }
+  .score-strip .label {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Inline forms: every field and action shares three rows (label, control, hint), so labels sit on one
+   line, controls on one line and buttons line up with the controls. */
+.inline-form {
+  grid-auto-rows: auto;
+  row-gap: 0;
+}
+
+.inline-form > .field {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  gap: var(--s-2);
+  align-content: start;
+}
+
+.inline-form > .field > .label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.form-action > .btn,
+.form-action > .row,
+.form-action > .copy {
+  align-self: stretch;
+  min-height: 2.75rem;
+}
+
+.form-action > .row {
+  flex-wrap: nowrap;
+}
+
+.form-action > .btn-quiet {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.auth-links {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
